@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手羽先センセーション セトリDB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --main-orange: #f39800; --bg: #f4f4f4; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; color: #333; }
+        header { background: var(--main-orange); color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+        
+        /* 管理モード用 */
+        #adminBtn { position: absolute; right: 10px; top: 18px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
+        #adminForm { display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 5px solid var(--main-orange); }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        .submit-btn { width: 100%; background: var(--main-orange); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+
+        /* 検索バー */
+        .search-box { position: sticky; top: 10px; z-index: 10; margin-bottom: 20px; }
+        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); outline: none; }
+
+        /* カードデザイン */
+        .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; transition: transform 0.1s; }
+        .live-card:active { transform: scale(0.98); }
+        .live-title { color: var(--main-orange); margin: 5px 0; font-size: 1.15rem; font-weight: bold; }
+        .meta { font-size: 0.85rem; color: #777; margin-bottom: 5px; }
+        .meta i { width: 18px; color: var(--main-orange); }
+
+        /* セトリ詳細 */
+        .setlist-area { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eee; display: none; }
+        .setlist-area.active { display: block; }
+        .song-item { border-bottom: 1px solid #f0f0f0; padding: 6px 0; font-size: 1rem; }
+        .note-badge { font-size: 0.8rem; color: #d35400; background: #fff5e6; padding: 8px; margin-top: 10px; border-radius: 6px; border-left: 3px solid #f39800; }
+        .copy-btn { background: #f0f0f0; border: none; padding: 10px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; color: #555; }
+        
+        #loading { text-align: center; padding: 40px; color: var(--main-orange); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>手羽セン セトリDB</h1>
+    <button id="adminBtn" onclick="toggleLogin()"><i class="fas fa-lock"></i> 管理</button>
+</header>
+
+<div class="container">
+    <div id="adminForm">
+        <h3 style="margin-top:0">ライブ情報登録</h3>
+        <div class="form-group"><label>日付</label><input type="date" id="f_date"></div>
+        <div class="form-group"><label>ライブ名</label><input type="text" id="f_title" placeholder="単独公演など"></div>
+        <div class="form-group"><label>会場</label><input type="text" id="f_venue" placeholder="名古屋ReNY limitedなど"></div>
+        <div class="form-group"><label>セトリ (1曲ごとに改行)</label><textarea id="f_setlist" rows="6" placeholder="SE&#13;&#10;君キミ、恋病&#13;&#10;MC"></textarea></div>
+        <div class="form-group"><label>備考</label><input type="text" id="f_note" placeholder="新衣装お披露目など"></div>
+        <button class="submit-btn" onclick="submitData()">この内容で登録する</button>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="日付・ライブ名・曲名で検索..." oninput="filterList()">
+    </div>
+
+    <div id="loading"><i class="fas fa-circle-notch fa-spin"></i> データを取得中...</div>
+    <div id="liveList"></div>
+</div>
+
+<script>
+    // URL設定済み
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
+    let allData = [];
+    let isAdmin = false;
+
+    // ログイン処理
+    function toggleLogin() {
+        if (!isAdmin) {
+            const pass = prompt("管理者パスワードを入力してください");
+            if (pass === "tebasen123") {
+                isAdmin = true;
+                document.getElementById('adminForm').style.display = 'block';
+                window.scrollTo(0, 0);
+            } else {
+                alert("パスワードが違います");
+            }
+        } else {
+            isAdmin = false;
+            document.getElementById('adminForm').style.display = 'none';
+        }
+    }
+
+    // データ取得
+    async function fetchData() {
+        const loadingEl = document.getElementById('loading');
+        loadingEl.style.display = 'block';
+        try {
+            const res = await fetch(GAS_API_URL);
+            allData = await res.json();
+            renderList(allData);
+        } catch (e) {
+            console.error("Fetch Error:", e);
+            loadingEl.innerText = "データの取得に失敗しました。GASの公開設定を確認してください。";
+        }
+        loadingEl.style.display = 'none';
+    }
+
+    // データ送信
+    async function submitData() {
+        const payload = {
+            date: document.getElementById('f_date').value,
+            title: document.getElementById('f_title').value,
+            venue: document.getElementById('f_venue').value,
+            setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
+            note: document.getElementById('f_note').value
+        };
+
+        if(!payload.date || !payload.title) return alert("日付とタイトルは必須です");
+
+        const btn = document.querySelector('.submit-btn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        try {
+            // GASへのPOST送信
+            await fetch(GAS_API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            alert("登録完了しました！");
+            location.reload();
+        } catch (e) {
+            alert("送信に失敗しました。");
+            btn.disabled = false;
+            btn.innerText = "登録する";
+        }
+    }
+
+    // リスト描画
+    function renderList(data) {
+        const listDiv = document.getElementById('liveList');
+        if (data.length === 0) {
+            listDiv.innerHTML = "<p style='text-align:center; color:#999;'>表示できるライブがありません</p>";
+            return;
+        }
+
+        listDiv.innerHTML = data.map(item => {
+            // 日付表示の整形
+            const displayDate = item.date ? item.date.split('T')[0].replace(/-/g, '/') : "不明";
+
+            return `
+                <div class="live-card">
+                    <div onclick="this.nextElementSibling.classList.toggle('active')">
+                        <div class="meta">
+                            <span><i class="fas fa-calendar-alt"></i> ${displayDate}</span>
+                            <span style="margin-left:10px;"><i class="fas fa-map-marker-alt"></i> ${item.venue}</span>
+                        </div>
+                        <div class="live-title">${item.title}</div>
+                    </div>
+                    <div class="setlist-area">
+                        ${item.setlist.map((s, i) => `<div class="song-item">${i+1}. ${s}</div>`).join('')}
+                        ${item.note ? `<div class="note-badge"><i class="fas fa-info-circle"></i> ${item.note}</div>` : ''}
+                        <button class="copy-btn" onclick="copyText('${displayDate}', '${item.title}', '${item.setlist.join('\\n')}')">
+                            <i class="fas fa-copy"></i> セトリをコピー
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // フィルター機能
+    function filterList() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = allData.filter(item => 
+            item.title.toLowerCase().includes(query) || 
+            item.venue.toLowerCase().includes(query) ||
+            item.setlist.some(s => s.toLowerCase().includes(query)) ||
+            (item.date && item.date.includes(query))
+        );
+        renderList(filtered);
+    }
+
+    // コピー機能
+    function copyText(date, title, setlist) {
+        const text = `【${date}】${title}\n\n${setlist.replace(/\\n/g, '\n')}\n#手羽セン #手羽先センセーション`;
+        navigator.clipboard.writeText(text);
+        alert("コピーしました！");
+    }
+
+    // 起動時にデータ取得開始
+    fetchData();
+</script>
+</body>
+</html>
