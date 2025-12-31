@@ -25,7 +25,8 @@
         .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .rank-num { font-weight: bold; color: var(--main-orange); font-size: 1.2rem; min-width: 25px; text-align: center; }
         .rank-info { flex: 1; }
-        .rank-name { font-weight: bold; margin-bottom: 4px; font-size: 0.95rem; }
+        .rank-name { font-weight: bold; margin-bottom: 4px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
+        .prob-badge { font-size: 0.7rem; background: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffcc80; }
         .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; margin-top: 5px; }
         .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s ease-out; }
 
@@ -43,14 +44,13 @@
         .action-btns { display: flex; gap: 8px; margin-top: 15px; }
         .btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; border: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.85rem; cursor: pointer; }
 
-        /* フッター(修正版) */
+        /* フッター */
         footer { background: #444; color: #ddd; padding: 40px 15px 30px; text-align: center; margin-top: 50px; }
         .footer-official-title { color: white; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px; }
         .footer-sns-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
         .footer-sns-links a { font-size: 2rem; text-decoration: none; transition: transform 0.2s, opacity 0.2s; display: inline-block; }
         .footer-sns-links a:active { transform: scale(0.9); opacity: 0.7; }
         
-        /* SNSアイコンカラー設定 */
         .fa-globe { color: #f39800 !important; }
         .fa-x-twitter { color: #ffffff !important; }
         .fa-youtube { color: #ff0000 !important; }
@@ -93,7 +93,10 @@
     </div>
 
     <div id="rank-page" class="page-content">
-        <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; font-size: 1.1rem;">楽曲演奏回数 TOP15</h3>
+        <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; font-size: 1.1rem;">
+            楽曲演奏回数 TOP15
+            <span style="display:block; font-size:0.7rem; font-weight:normal; color:#888; margin-top:5px;">期待値 = 直近10公演の演奏率</span>
+        </h3>
         <div id="songRanking"></div>
         <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; margin-top: 35px; font-size: 1.1rem;">会場別 公演数</h3>
         <div id="venueRanking"></div>
@@ -145,6 +148,10 @@
 
     function generateRanking() {
         const songMap = {}; const venueMap = {};
+        const last10 = allData.slice(0, 10);
+        const last10SongMap = {};
+
+        // 通算ランキング集計
         allData.forEach(item => {
             item.setlist.forEach(song => {
                 const s = song.trim();
@@ -152,21 +159,55 @@
             });
             if (item.venue) venueMap[item.venue] = (venueMap[item.venue] || 0) + 1;
         });
-        renderRankList(songMap, 'songRanking', '回');
-        renderRankList(venueMap, 'venueRanking', '公演');
+
+        // 直近10件の期待値集計
+        last10.forEach(item => {
+            const uniqueSongs = new Set(item.setlist.map(s => s.trim()));
+            uniqueSongs.forEach(s => {
+                if (s && !["MC","SE"].includes(s)) last10SongMap[s] = (last10SongMap[s] || 0) + 1;
+            });
+        });
+
+        renderSongRankList(songMap, last10SongMap);
+        renderVenueRankList(venueMap);
     }
 
-    function renderRankList(map, targetId, unit) {
+    function renderSongRankList(map, recentMap) {
         const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 15);
         const max = sorted.length > 0 ? sorted[0][1] : 1;
-        document.getElementById(targetId).innerHTML = sorted.map((e, idx) => `
+        
+        document.getElementById('songRanking').innerHTML = sorted.map((e, idx) => {
+            const recentCount = recentMap[e[0]] || 0;
+            const probability = recentCount * 10; // 10公演中n回 = n*10%
+            return `
+                <div class="rank-item">
+                    <div class="rank-num">${idx + 1}</div>
+                    <div class="rank-info">
+                        <div class="rank-name">
+                            <span>${e[0]}</span>
+                            <span class="prob-badge">期待値 ${probability}%</span>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/max)*100}%"></div></div>
+                            <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}回</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderVenueRankList(map) {
+        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const max = sorted.length > 0 ? sorted[0][1] : 1;
+        document.getElementById('venueRanking').innerHTML = sorted.map((e, idx) => `
             <div class="rank-item">
                 <div class="rank-num">${idx + 1}</div>
                 <div class="rank-info">
                     <div class="rank-name">${e[0]}</div>
                     <div style="display:flex; align-items:center;">
-                        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/max)*100}%"></div></div>
-                        <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}${unit}</span>
+                        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/max)*100}%; background:#999;"></div></div>
+                        <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}公演</span>
                     </div>
                 </div>
             </div>
