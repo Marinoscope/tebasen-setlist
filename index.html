@@ -6,36 +6,46 @@
     <title>手羽先センセーション セトリDB</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
+        :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; --x-black: #000000; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; color: #333; }
         header { background: var(--main-orange); color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .container { max-width: 600px; margin: 0 auto; padding: 15px; }
         
         /* 管理モード用 */
         #adminBtn { position: absolute; right: 10px; top: 18px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
-        #adminForm { display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--main-orange); }
+        #adminForm { display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 5px solid var(--main-orange); }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
 
+        /* フィルターエリア */
         .filter-area { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 10px 0; }
-        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
+        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); outline: none; background: white; }
         .filter-controls { display: flex; align-items: center; justify-content: space-between; }
         .filter-controls select { padding: 8px; border-radius: 8px; border: 1px solid #ccc; background: white; width: 45%; }
         .fav-filter-wrap { font-size: 0.85rem; font-weight: bold; color: #666; cursor: pointer; }
 
+        /* カードデザイン */
         .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; cursor: pointer; }
         .live-title { color: var(--main-orange); margin: 5px 0; font-size: 1.15rem; font-weight: bold; padding-right: 40px; }
         .meta { font-size: 0.85rem; color: #777; margin-bottom: 5px; }
         .meta i { width: 18px; color: var(--main-orange); }
 
+        /* お気に入りボタン（★） */
         .fav-btn { position: absolute; top: 15px; right: 15px; font-size: 1.7rem; color: #eee; transition: color 0.2s; z-index: 10; padding: 5px; }
         .fav-btn.active { color: var(--fav-pink); }
 
+        /* セトリ詳細 */
         .setlist-area { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eee; display: none; }
         .setlist-area.active { display: block; }
         .song-item { border-bottom: 1px solid #f0f0f0; padding: 8px 0; font-size: 1rem; }
-        .copy-btn { background: #f0f0f0; border: none; padding: 12px; border-radius: 10px; font-size: 0.9rem; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; color: #555; }
+        
+        /* アクションボタン（コピー・Xシェア） */
+        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; border: none; padding: 12px; border-radius: 10px; font-size: 0.9rem; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.7; }
+        .copy-btn { background: #f0f0f0; color: #555; }
+        .x-btn { background: var(--x-black); color: white; }
         
         #loading { text-align: center; padding: 40px; color: var(--main-orange); font-weight: bold; }
     </style>
@@ -84,41 +94,30 @@
     let allData = [];
     let favorites = JSON.parse(localStorage.getItem('tebasen_favs')) || [];
 
-    // --- ログイン状態の管理 ---
     function checkLoginStatus() {
-        const isLoggedIn = localStorage.getItem('tebasen_admin_login') === 'true';
-        if (isLoggedIn) {
+        if (localStorage.getItem('tebasen_admin_login') === 'true') {
             document.getElementById('adminForm').style.display = 'block';
         }
     }
 
     function toggleLogin() {
-        const isLoggedIn = localStorage.getItem('tebasen_admin_login') === 'true';
-        if (!isLoggedIn) {
+        if (localStorage.getItem('tebasen_admin_login') !== 'true') {
             const pass = prompt("パスワードを入力");
             if (pass === "tebasen123") {
                 localStorage.setItem('tebasen_admin_login', 'true');
                 document.getElementById('adminForm').style.display = 'block';
-                alert("ログインしました。");
-            } else if (pass !== null) {
-                alert("パスワードが違います");
             }
         } else {
-            // ログイン済みの場合はフォームの表示・非表示だけ切り替える
             const form = document.getElementById('adminForm');
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
     }
 
     function logout() {
-        if(confirm("ログアウトしますか？")) {
-            localStorage.removeItem('tebasen_admin_login');
-            document.getElementById('adminForm').style.display = 'none';
-            alert("ログアウトしました。");
-        }
+        localStorage.removeItem('tebasen_admin_login');
+        location.reload();
     }
 
-    // --- データ処理 ---
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
@@ -143,31 +142,19 @@
             setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
             note: document.getElementById('f_note').value
         };
-        
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "送信中...";
-
         try {
             await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
             alert("登録しました！");
-            // 入力欄をクリアするだけでリロードさせない（ログイン状態維持のため）
-            document.getElementById('f_title').value = "";
-            document.getElementById('f_venue').value = "";
-            document.getElementById('f_setlist').value = "";
-            document.getElementById('f_note').value = "";
+            document.querySelectorAll('#adminForm input, #adminForm textarea').forEach(el => el.value = "");
             btn.disabled = false;
-            btn.innerText = "登録する";
-            fetchData(); // リストだけ更新
-        } catch (e) {
-            alert("送信失敗");
-            btn.disabled = false;
-            btn.innerText = "登録する";
-        }
+            fetchData();
+        } catch (e) { alert("送信失敗"); btn.disabled = false; }
     }
 
     function toggleFavorite(uniqueId, event) {
-        if (event) { event.stopPropagation(); event.preventDefault(); }
+        event.stopPropagation();
         const idStr = String(uniqueId);
         const index = favorites.indexOf(idStr);
         if (index === -1) favorites.push(idStr); else favorites.splice(index, 1);
@@ -194,6 +181,8 @@
         listDiv.innerHTML = data.map(item => {
             const isFav = favorites.includes(String(item.uniqueId));
             const displayDate = item.date ? item.date.replace(/-/g, '/').substring(0, 16) : "不明";
+            const setlistText = item.setlist.join('\\n'); // JS引数用にエスケープ
+
             return `
                 <div class="live-card">
                     <i class="fas fa-star fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${item.uniqueId}', event)"></i>
@@ -207,7 +196,14 @@
                     <div class="setlist-area">
                         ${item.setlist.map((s, i) => `<div class="song-item">${i+1}. ${s}</div>`).join('')}
                         ${item.note ? `<div style="color:orange; font-size:0.85rem; margin-top:10px;">※ ${item.note}</div>` : ''}
-                        <button class="copy-btn" onclick="copyText('${displayDate}', '${item.title}', '${item.setlist.join('\\n')}')">コピー</button>
+                        <div class="action-btns">
+                            <button class="btn copy-btn" onclick="copyText('${displayDate}', '${item.title}', '${setlistText}')">
+                                <i class="fas fa-copy"></i> コピー
+                            </button>
+                            <button class="btn x-btn" onclick="shareOnX('${displayDate}', '${item.title}', '${setlistText}')">
+                                <i class="fab fa-x-twitter"></i> ポスト
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -215,11 +211,17 @@
     }
 
     function copyText(date, title, setlist) {
-        navigator.clipboard.writeText(`【${date}】${title}\n\n${setlist.replace(/\\n/g, '\n')}\n#手羽セン`);
+        const text = `【${date}】${title}\n\n${setlist.replace(/\\n/g, '\n')}\n#手羽セン #手羽先センセーション`;
+        navigator.clipboard.writeText(text);
         alert("コピーしました");
     }
 
-    // 起動時の処理
+    function shareOnX(date, title, setlist) {
+        const text = encodeURIComponent(`【${date}】${title}\n\n${setlist.replace(/\\n/g, '\n')}\n#手羽セン #手羽先センセーション`);
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+    }
+
     checkLoginStatus();
     fetchData();
 </script>
