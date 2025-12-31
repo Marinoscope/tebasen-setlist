@@ -3,52 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>手羽先センセーション セトリDB</title>
+    <title>手羽セン セトリログ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; --x-black: #000000; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; color: #333; -webkit-text-size-adjust: 100%; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
         
-        /* 固定ヘッダーとタブ */
+        /* 固定ヘッダー & タブ */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
+        header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
         .tabs { display: flex; background: white; border-bottom: 1px solid #ddd; }
         .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
         .tab-btn.active { color: var(--main-orange); border-bottom: 3px solid var(--main-orange); }
 
-        .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; min-height: 80vh; }
         
-        /* セクション切り替え */
+        /* コンテンツ切り替え */
         .page-content { display: none; }
         .page-content.active { display: block; }
 
-        /* ランキング用スタイル */
-        .rank-item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .rank-num { font-weight: bold; color: var(--main-orange); font-size: 1.2rem; min-width: 25px; }
+        /* ランキング表示 */
+        .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .rank-num { font-weight: bold; color: var(--main-orange); font-size: 1.2rem; min-width: 25px; text-align: center; }
         .rank-info { flex: 1; }
-        .rank-name { font-weight: bold; margin-bottom: 5px; }
-        .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; }
-        .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; }
-        .rank-count { font-size: 0.8rem; color: #777; margin-left: 10px; font-weight: bold; }
+        .rank-name { font-weight: bold; margin-bottom: 4px; font-size: 0.95rem; }
+        .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; margin-top: 5px; }
+        .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s ease-out; }
 
-        /* 既存のカード等のスタイル（反応改善版を継承） */
-        #adminBtn { position: absolute; right: 10px; top: 18px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 5px; padding: 4px 8px; font-size: 0.75rem; }
-        #adminForm { display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--main-orange); }
-        .form-group { margin-bottom: 10px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
-        .search-box { margin: 10px 0; }
-        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; }
-        .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); -webkit-tap-highlight-color: transparent; }
+        /* ライブカード */
+        #adminBtn { position: absolute; right: 10px; top: 15px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 5px; padding: 4px 8px; font-size: 0.7rem; cursor: pointer; }
+        #adminForm { display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--main-orange); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; margin: 10px 0; font-size: 16px; }
+        .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .live-title { color: var(--main-orange); font-weight: bold; font-size: 1.1rem; padding-right: 40px; margin: 5px 0; }
-        .meta { font-size: 0.8rem; color: #777; }
-        .fav-btn { position: absolute; top: 15px; right: 15px; font-size: 1.6rem; color: #eee; z-index: 5; padding: 5px; }
+        .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
+        .fav-btn { position: absolute; top: 15px; right: 15px; font-size: 1.6rem; color: #eee; z-index: 5; padding: 5px; transition: color 0.2s; }
         .fav-btn.active { color: var(--fav-pink); }
         .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .setlist-area.active { display: block; }
         .action-btns { display: flex; gap: 8px; margin-top: 15px; }
-        .btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.85rem; }
-        .copy-btn { background: #f0f0f0; color: #555; }
-        .x-btn { background: var(--x-black); color: white; }
+        .btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; border: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.85rem; cursor: pointer; }
+
+        /* フッター */
+        footer { background: #333; color: #ccc; padding: 40px 15px 30px; text-align: center; margin-top: 50px; }
+        .footer-official-title { color: white; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px; }
+        .footer-sns-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 25px; }
+        .footer-sns-links a { font-size: 1.6rem; text-decoration: none; }
+        .fa-globe { color: #55acee; }
+        .fa-x-twitter { color: white; }
+        .fa-instagram { color: #e4405f; }
+        .fa-tiktok { color: #ff0050; }
+        .disclaimer { font-size: 0.75rem; line-height: 1.6; margin-bottom: 20px; color: #aaa; }
+        .copyright { font-size: 0.8rem; color: #eee; border-top: 1px solid #444; padding-top: 20px; letter-spacing: 0.5px; }
+
         #loading { text-align: center; padding: 40px; color: var(--main-orange); font-weight: bold; }
     </style>
 </head>
@@ -56,7 +64,7 @@
 
 <div class="sticky-header">
     <header>
-        <h1>手羽セン セトリDB</h1>
+        <h1>手羽セン セトリログ</h1>
         <button id="adminBtn" onclick="toggleLogin()">管理</button>
     </header>
     <div class="tabs">
@@ -68,30 +76,43 @@
 <div class="container">
     <div id="live-page" class="page-content active">
         <div id="adminForm">
-            <h3 style="margin-top:0">新規登録</h3>
-            <div class="form-group"><input type="datetime-local" id="f_date"></div>
-            <div class="form-group"><input type="text" id="f_title" placeholder="ライブ名"></div>
-            <div class="form-group"><input type="text" id="f_venue" placeholder="会場"></div>
-            <div class="form-group"><textarea id="f_setlist" rows="5" placeholder="セトリ(1曲1行)"></textarea></div>
-            <div class="form-group"><input type="text" id="f_note" placeholder="備考"></div>
-            <button onclick="submitData()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold;">登録</button>
+            <h3 style="margin-top:0">ライブ登録</h3>
+            <input type="datetime-local" id="f_date" style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:5px;">
+            <input type="text" id="f_title" placeholder="ライブ名" style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:5px;">
+            <input type="text" id="f_venue" placeholder="会場" style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:5px;">
+            <textarea id="f_setlist" rows="5" placeholder="セトリ(1曲1行)" style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:5px;"></textarea>
+            <input type="text" id="f_note" placeholder="備考" style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:5px;">
+            <button id="submitBtn" onclick="submitData()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold;">登録する</button>
         </div>
-
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="曲名や会場で検索..." oninput="handleFilter()">
-        </div>
-        
+        <div class="search-box"><input type="text" id="searchInput" placeholder="曲名、会場、ライブ名で検索..." oninput="handleFilter()"></div>
         <div id="loading"><i class="fas fa-circle-notch fa-spin"></i> 取得中...</div>
         <div id="liveList"></div>
     </div>
 
     <div id="rank-page" class="page-content">
-        <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px;">楽曲演奏回数</h3>
+        <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; font-size: 1.1rem;">楽曲演奏回数 TOP15</h3>
         <div id="songRanking"></div>
-        <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; margin-top: 30px;">会場別</h3>
+        <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; margin-top: 35px; font-size: 1.1rem;">会場別 公演数</h3>
         <div id="venueRanking"></div>
     </div>
 </div>
+
+<footer>
+    <div class="footer-official-title">手羽先センセーション 公式リンク</div>
+    <div class="footer-sns-links">
+        <a href="https://tebasen.com/" target="_blank"><i class="fas fa-globe"></i></a>
+        <a href="https://x.com/tebasen_info" target="_blank"><i class="fab fa-x-twitter"></i></a>
+        <a href="https://www.instagram.com/tebasen_official/" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.tiktok.com/@tebasen_official" target="_blank"><i class="fab fa-tiktok"></i></a>
+    </div>
+    <div class="disclaimer">
+        当サイトはファンが運営する非公式サイトであり、<br>
+        手羽先センセーション公式および所属事務所とは一切関係ありません。
+    </div>
+    <div class="copyright">
+        &copy; 2025 手羽セン セトリログ by Marino_scope
+    </div>
+</footer>
 
 <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
@@ -105,52 +126,10 @@
         document.getElementById(pageId).classList.add('active');
         btn.classList.add('active');
         if (pageId === 'rank-page') generateRanking();
+        window.scrollTo(0,0);
     }
 
-    // ランキング生成ロジック
-    function generateRanking() {
-        const songMap = {};
-        const venueMap = {};
-        allData.forEach(item => {
-            // 曲カウント
-            item.setlist.forEach(song => {
-                const s = song.trim();
-                if (s && s !== "MC" && s !== "SE") {
-                    songMap[s] = (songMap[s] || 0) + 1;
-                }
-            });
-            // 会場カウント
-            if (item.venue) {
-                venueMap[item.venue] = (venueMap[item.venue] || 0) + 1;
-            }
-        });
-
-        renderRankList(songMap, 'songRanking', '回');
-        renderRankList(venueMap, 'venueRanking', '公演');
-    }
-
-    function renderRankList(map, targetId, unit) {
-        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 15);
-        const max = sorted.length > 0 ? sorted[0][1] : 1;
-        const html = sorted.map((entry, idx) => {
-            const percent = (entry[1] / max) * 100;
-            return `
-                <div class="rank-item">
-                    <div class="rank-num">${idx + 1}</div>
-                    <div class="rank-info">
-                        <div class="rank-name">${entry[0]}</div>
-                        <div style="display:flex; align-items:center;">
-                            <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${percent}%"></div></div>
-                            <span class="rank-count">${entry[1]}${unit}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        document.getElementById(targetId).innerHTML = html || "データがありません";
-    }
-
-    // 既存の通信・表示系関数（前回の改善版を流用）
+    // 取得
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
@@ -158,26 +137,58 @@
             allData = allData.map(item => ({...item, uniqueId: String(item.id || (item.date + item.title))}));
             allData.sort((a, b) => new Date(b.date) - new Date(a.date));
             renderList(allData);
-        } catch (e) { document.getElementById('loading').innerText = "取得失敗"; }
+        } catch (e) { document.getElementById('loading').innerText = "データの取得に失敗しました"; }
         document.getElementById('loading').style.display = 'none';
     }
 
+    // ランキング生成
+    function generateRanking() {
+        const songMap = {}; const venueMap = {};
+        allData.forEach(item => {
+            item.setlist.forEach(song => {
+                const s = song.trim();
+                if (s && !["MC","SE"].includes(s)) songMap[s] = (songMap[s] || 0) + 1;
+            });
+            if (item.venue) venueMap[item.venue] = (venueMap[item.venue] || 0) + 1;
+        });
+        renderRankList(songMap, 'songRanking', '回');
+        renderRankList(venueMap, 'venueRanking', '公演');
+    }
+
+    function renderRankList(map, targetId, unit) {
+        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 15);
+        const max = sorted.length > 0 ? sorted[0][1] : 1;
+        document.getElementById(targetId).innerHTML = sorted.map((e, idx) => `
+            <div class="rank-item">
+                <div class="rank-num">${idx + 1}</div>
+                <div class="rank-info">
+                    <div class="rank-name">${e[0]}</div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/max)*100}%"></div></div>
+                        <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}${unit}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 一覧描画
     function renderList(data) {
-        const listDiv = document.getElementById('liveList');
-        listDiv.innerHTML = data.map(item => {
+        document.getElementById('liveList').innerHTML = data.map(item => {
             const isFav = favorites.includes(item.uniqueId);
-            const displayDate = item.date ? item.date.replace(/-/g, '/').substring(0, 16) : "不明";
-            const setlistRaw = item.setlist.join('\n');
+            const d = item.date ? item.date.replace(/-/g, '/').substring(0, 16) : "不明";
+            const s = item.setlist.join('\n');
             return `
                 <div class="live-card" onclick="this.querySelector('.setlist-area').classList.toggle('active')">
                     <i class="fas fa-star fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${item.uniqueId}', event)"></i>
-                    <div class="meta"><span><i class="fas fa-calendar-alt"></i> ${displayDate}</span><span style="margin-left:10px;"><i class="fas fa-map-marker-alt"></i> ${item.venue}</span></div>
+                    <div class="meta"><span><i class="fas fa-calendar-alt"></i> ${d}</span><span style="margin-left:10px;"><i class="fas fa-map-marker-alt"></i> ${item.venue}</span></div>
                     <div class="live-title">${item.title}</div>
                     <div class="setlist-area">
-                        ${item.setlist.map((s, i) => `<div class="song-item">${i+1}. ${s}</div>`).join('')}
+                        ${item.setlist.map((song, i) => `<div style="padding:8px 0; border-bottom:1px solid #f0f0f0;">${i+1}. ${song}</div>`).join('')}
+                        ${item.note ? `<div style="color:orange; font-size:0.85rem; margin-top:10px;">※ ${item.note}</div>` : ''}
                         <div class="action-btns">
-                            <button class="btn copy-btn" onclick="execCopy(event, '${displayDate}', '${item.title}', \`${setlistRaw}\`)"><i class="fas fa-copy"></i> コピー</button>
-                            <button class="btn x-btn" onclick="execShare(event, '${displayDate}', '${item.title}', \`${setlistRaw}\`)"><i class="fab fa-x-twitter"></i> ポスト</button>
+                            <button class="btn" style="background:#f0f0f0; color:#555;" onclick="execCopy(event, '${d}', '${item.title}', \`${s}\`)"><i class="fas fa-copy"></i> コピー</button>
+                            <button class="btn" style="background:black; color:white;" onclick="execShare(event, '${d}', '${item.title}', \`${s}\`)"><i class="fab fa-x-twitter"></i> ポスト</button>
                         </div>
                     </div>
                 </div>
@@ -185,14 +196,28 @@
         }).join('');
     }
 
-    // 共通関数
+    // 各種アクション
     function toggleFavorite(id, e) { e.stopPropagation(); const i = favorites.indexOf(id); if(i===-1) favorites.push(id); else favorites.splice(i,1); localStorage.setItem('tebasen_favs', JSON.stringify(favorites)); e.currentTarget.classList.toggle('active'); }
-    function execCopy(e, d, t, s) { e.stopPropagation(); navigator.clipboard.writeText(`【${d}】${t}\n\n${s}\n#手羽セン`).then(() => alert("コピーしました")); }
-    function execShare(e, d, t, s) { e.stopPropagation(); window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`【${d}】${t}\n\n${s}\n#手羽セン`)}&url=${encodeURIComponent(window.location.href)}`, '_blank'); }
-    function handleFilter() { const q = document.getElementById('searchInput').value.toLowerCase(); const filtered = allData.filter(item => item.title.toLowerCase().includes(q) || item.setlist.some(s => s.toLowerCase().includes(q))); renderList(filtered); }
-    function toggleLogin() { if(localStorage.getItem('tebasen_admin_login')!=='true'){ if(prompt("パスワード")==="tebasen123") { localStorage.setItem('tebasen_admin_login','true'); location.reload(); }} else { const f=document.getElementById('adminForm'); f.style.display=f.style.display==='none'?'block':'none'; }}
-    async function submitData() { /* 既存の登録処理 */ }
+    function execCopy(e, d, t, s) { e.stopPropagation(); navigator.clipboard.writeText(`【${d}】${t}\n\n${s}\n#手羽セン #手羽先センセーション`).then(() => alert("コピーしました")); }
+    function execShare(e, d, t, s) { e.stopPropagation(); window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`【${d}】${t}\n\n${s}\n#手羽セン #手羽先センセーション`)}&url=${encodeURIComponent(window.location.href)}`, '_blank'); }
+    function handleFilter() { const q = document.getElementById('searchInput').value.toLowerCase(); renderList(allData.filter(i => i.title.toLowerCase().includes(q) || i.setlist.some(s => s.toLowerCase().includes(q)))); }
+    function toggleLogin() { if(localStorage.getItem('tebasen_admin_login')!=='true'){ if(prompt("パスワード")==="tebasen123"){ localStorage.setItem('tebasen_admin_login','true'); location.reload(); }} else { const f=document.getElementById('adminForm'); f.style.display=f.style.display==='none'?'block':'none'; }}
+    async function submitData() {
+        const payload = {
+            date: document.getElementById('f_date').value.replace('T', ' '),
+            title: document.getElementById('f_title').value,
+            venue: document.getElementById('f_venue').value,
+            setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
+            note: document.getElementById('f_note').value
+        };
+        const btn = document.getElementById('submitBtn'); btn.disabled = true;
+        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        alert("登録完了しました");
+        document.querySelectorAll('#adminForm input, #adminForm textarea').forEach(el => el.value = "");
+        btn.disabled = false; fetchData();
+    }
 
+    if (localStorage.getItem('tebasen_admin_login') === 'true') document.getElementById('adminForm').style.display = 'block';
     fetchData();
 </script>
 </body>
