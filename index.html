@@ -11,31 +11,27 @@
         header { background: var(--main-orange); color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .container { max-width: 600px; margin: 0 auto; padding: 15px; }
         
+        /* 管理モード用 */
         #adminBtn { position: absolute; right: 10px; top: 18px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
         #adminForm { display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--main-orange); }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
 
-        /* フィルターエリア */
         .filter-area { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 10px 0; }
         .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
         .filter-controls { display: flex; align-items: center; justify-content: space-between; }
         .filter-controls select { padding: 8px; border-radius: 8px; border: 1px solid #ccc; background: white; width: 45%; }
         .fav-filter-wrap { font-size: 0.85rem; font-weight: bold; color: #666; cursor: pointer; }
 
-        /* カードデザイン */
-        .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; cursor: pointer; }
         .live-title { color: var(--main-orange); margin: 5px 0; font-size: 1.15rem; font-weight: bold; padding-right: 40px; }
         .meta { font-size: 0.85rem; color: #777; margin-bottom: 5px; }
         .meta i { width: 18px; color: var(--main-orange); }
 
-        /* お気に入りボタン（★） */
-        .fav-btn { position: absolute; top: 15px; right: 15px; font-size: 1.7rem; color: #eee; transition: color 0.2s, transform 0.1s; z-index: 10; padding: 5px; }
+        .fav-btn { position: absolute; top: 15px; right: 15px; font-size: 1.7rem; color: #eee; transition: color 0.2s; z-index: 10; padding: 5px; }
         .fav-btn.active { color: var(--fav-pink); }
-        .fav-btn:active { transform: scale(1.2); }
 
-        /* セトリ詳細 */
         .setlist-area { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eee; display: none; }
         .setlist-area.active { display: block; }
         .song-item { border-bottom: 1px solid #f0f0f0; padding: 8px 0; font-size: 1rem; }
@@ -59,7 +55,8 @@
         <div class="form-group"><label>会場</label><input type="text" id="f_venue"></div>
         <div class="form-group"><label>セトリ (1曲1行)</label><textarea id="f_setlist" rows="6"></textarea></div>
         <div class="form-group"><label>備考</label><input type="text" id="f_note"></div>
-        <button onclick="submitData()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold;">登録する</button>
+        <button id="submitBtn" onclick="submitData()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold;">登録する</button>
+        <button onclick="logout()" style="width:100%; background:#ccc; color:white; border:none; padding:8px; border-radius:6px; margin-top:10px; cursor:pointer;">ログアウト</button>
     </div>
 
     <div class="filter-area">
@@ -87,17 +84,45 @@
     let allData = [];
     let favorites = JSON.parse(localStorage.getItem('tebasen_favs')) || [];
 
-    function toggleLogin() {
-        if (prompt("パスワードを入力") === "tebasen123") {
+    // --- ログイン状態の管理 ---
+    function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem('tebasen_admin_login') === 'true';
+        if (isLoggedIn) {
             document.getElementById('adminForm').style.display = 'block';
         }
     }
 
+    function toggleLogin() {
+        const isLoggedIn = localStorage.getItem('tebasen_admin_login') === 'true';
+        if (!isLoggedIn) {
+            const pass = prompt("パスワードを入力");
+            if (pass === "tebasen123") {
+                localStorage.setItem('tebasen_admin_login', 'true');
+                document.getElementById('adminForm').style.display = 'block';
+                alert("ログインしました。");
+            } else if (pass !== null) {
+                alert("パスワードが違います");
+            }
+        } else {
+            // ログイン済みの場合はフォームの表示・非表示だけ切り替える
+            const form = document.getElementById('adminForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    function logout() {
+        if(confirm("ログアウトしますか？")) {
+            localStorage.removeItem('tebasen_admin_login');
+            document.getElementById('adminForm').style.display = 'none';
+            alert("ログアウトしました。");
+        }
+    }
+
+    // --- データ処理 ---
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
             allData = await res.json();
-            // IDが不安定な場合の対策: 既存データに固有IDがない場合、日付+タイトルで生成
             allData = allData.map(item => ({
                 ...item,
                 uniqueId: item.id || (item.date + item.title)
@@ -118,47 +143,45 @@
             setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
             note: document.getElementById('f_note').value
         };
-        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-        alert("登録しました！"); location.reload();
+        
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        try {
+            await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+            alert("登録しました！");
+            // 入力欄をクリアするだけでリロードさせない（ログイン状態維持のため）
+            document.getElementById('f_title').value = "";
+            document.getElementById('f_venue').value = "";
+            document.getElementById('f_setlist').value = "";
+            document.getElementById('f_note').value = "";
+            btn.disabled = false;
+            btn.innerText = "登録する";
+            fetchData(); // リストだけ更新
+        } catch (e) {
+            alert("送信失敗");
+            btn.disabled = false;
+            btn.innerText = "登録する";
+        }
     }
 
-    // お気に入りボタンの処理を修正
     function toggleFavorite(uniqueId, event) {
-        // イベントの伝播を止める（カードが閉じるのを防ぐ）
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-
+        if (event) { event.stopPropagation(); event.preventDefault(); }
         const idStr = String(uniqueId);
         const index = favorites.indexOf(idStr);
-        
-        if (index === -1) {
-            favorites.push(idStr);
-        } else {
-            favorites.splice(index, 1);
-        }
-        
+        if (index === -1) favorites.push(idStr); else favorites.splice(index, 1);
         localStorage.setItem('tebasen_favs', JSON.stringify(favorites));
-        
-        // アイコンの色を即座に変更（全体再描画せずにクラスだけ切り替え）
-        const btn = event.currentTarget;
-        btn.classList.toggle('active');
-
-        // もし「お気に入りフィルタ」がONなら、リストから消すために再描画
-        if (document.getElementById('favFilter').checked) {
-            handleFilter();
-        }
+        event.currentTarget.classList.toggle('active');
+        if (document.getElementById('favFilter').checked) handleFilter();
     }
 
     function handleFilter() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         const year = document.getElementById('yearFilter').value;
         const onlyFav = document.getElementById('favFilter').checked;
-
         const filtered = allData.filter(item => {
-            const matchSearch = item.title.toLowerCase().includes(query) || 
-                               item.setlist.some(s => s.toLowerCase().includes(query));
+            const matchSearch = item.title.toLowerCase().includes(query) || item.setlist.some(s => s.toLowerCase().includes(query));
             const matchYear = year === "" || (item.date && item.date.startsWith(year));
             const matchFav = onlyFav ? favorites.includes(String(item.uniqueId)) : true;
             return matchSearch && matchYear && matchFav;
@@ -171,11 +194,9 @@
         listDiv.innerHTML = data.map(item => {
             const isFav = favorites.includes(String(item.uniqueId));
             const displayDate = item.date ? item.date.replace(/-/g, '/').substring(0, 16) : "不明";
-
             return `
                 <div class="live-card">
-                    <i class="fas fa-star fav-btn ${isFav ? 'active' : ''}" 
-                       onclick="toggleFavorite('${item.uniqueId}', event)"></i>
+                    <i class="fas fa-star fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${item.uniqueId}', event)"></i>
                     <div onclick="this.nextElementSibling.classList.toggle('active')">
                         <div class="meta">
                             <span><i class="fas fa-calendar-alt"></i> ${displayDate}</span>
@@ -198,6 +219,8 @@
         alert("コピーしました");
     }
 
+    // 起動時の処理
+    checkLoginStatus();
     fetchData();
 </script>
 </body>
