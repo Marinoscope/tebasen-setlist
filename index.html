@@ -9,7 +9,7 @@
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
         
-        /* ヘッダー・ナビゲーション */
+        /* ヘッダー */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
         header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
@@ -48,7 +48,7 @@
         .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .setlist-area.active { display: block; }
 
-        /* セトリ内のコピー・ポストボタン（復刻版） */
+        /* セトリ内のコピー・ポストボタン */
         .action-btns { display: flex; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
         .btn-action { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
         .btn-copy { background: #f0f0f0; color: #555; }
@@ -56,7 +56,7 @@
         .btn-share { background: #000; color: #fff; }
         .btn-share:active { background: #333; }
 
-        /* ランキング表示 */
+        /* ランキング */
         .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .rank-num { font-weight: bold; color: var(--main-orange); font-size: 1.2rem; min-width: 25px; text-align: center; }
         .rank-info { flex: 1; }
@@ -92,13 +92,11 @@
         <div id="adminForm">
             <button class="logout-btn" onclick="logoutAdmin()">ログアウト</button>
             <h3 style="margin-top:0">ライブ登録</h3>
-            
             <div class="admin-helper">
                 <p style="margin:0 0 5px 0; font-size:0.75rem; color:var(--main-orange); font-weight:bold;">公式ポストを貼り付けて自動入力</p>
-                <textarea id="ai_paste" rows="3" class="admin-input" placeholder="Xのセトリポストをここにコピペ"></textarea>
+                <textarea id="ai_paste" rows="3" class="admin-input" placeholder="Xのセトリポストをコピペ"></textarea>
                 <button onclick="parsePost()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">内容を解析してセット</button>
             </div>
-            
             <input type="datetime-local" id="f_date" class="admin-input">
             <input type="text" id="f_title" placeholder="ライブ名" class="admin-input">
             <input type="text" id="f_venue" placeholder="会場" class="admin-input">
@@ -144,11 +142,19 @@
 
 <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
+    const SHARE_URL = "https://marinoscope.github.io/tebasen-setlist/";
     let allData = [];
     let favorites = JSON.parse(localStorage.getItem('tebasen_favs')) || [];
     let isFavOnly = false;
 
-    // 管理パネル制御
+    // ポスト・コピー用テキスト生成
+    function generateShareText(date, title, setlistArray) {
+        const cleanDate = date.split(' ')[0]; // 時間を削る
+        const numberedSetlist = setlistArray.map((s, i) => `${i + 1}. ${s}`).join('\n');
+        return `${cleanDate}\n${title}\n\n${numberedSetlist}\n\n#手羽センセトリログ でチェック🐓\n${SHARE_URL}\n#手羽先センセーション`;
+    }
+
+    // 管理パネル
     function toggleAdminPanel() {
         if (localStorage.getItem('tebasen_admin_login') !== 'true') {
             if (prompt("パスワードを入力してください") === "tebasen123") {
@@ -178,7 +184,6 @@
         }
     }
 
-    // 解析補助
     function parsePost() {
         const text = document.getElementById('ai_paste').value;
         if (!text) return;
@@ -198,7 +203,7 @@
         document.getElementById('f_setlist').value = cleanSetlist.join('\n');
     }
 
-    // データ取得・表示
+    // 通信・表示
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
@@ -236,19 +241,19 @@
         list.innerHTML = data.map(i => {
             const isFav = favorites.includes(i.uniqueId);
             const d = i.date ? i.date.replace(/-/g, '/').substring(0, 16) : "不明";
-            const s = i.setlist.join('\n');
+            const setlistText = JSON.stringify(i.setlist);
             return `<div class="live-card" onclick="this.querySelector('.setlist-area').classList.toggle('active')">
                 <i class="fas fa-star fav-btn ${isFav?'active':''}" onclick="toggleFavorite('${i.uniqueId}', event)"></i>
                 <div class="meta"><span><i class="fas fa-calendar-alt"></i> ${d}</span><span style="margin-left:10px;"><i class="fas fa-map-marker-alt"></i> ${i.venue}</span></div>
                 <div class="live-title">${i.title}</div>
                 <div class="setlist-area">
                     ${i.setlist.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f8f8f8;">${idx+1}. ${song}</div>`).join('')}
-                    ${i.note ? `<div style="color:var(--main-orange); font-size:0.85rem; margin-top:10px; background:#fff9f0; padding:8px; border-radius:4px;">※ ${i.note}</div>` : ''}
+                    ${i.note ? `<div style="color:var(--main-orange); font-size:0.85rem; margin-top:10px;">※ ${i.note}</div>` : ''}
                     <div class="action-btns">
-                        <button class="btn-action btn-copy" onclick="execCopy(event, '${d}', '${i.title}', \`${s}\`)">
+                        <button class="btn-action btn-copy" onclick="execCopy(event, '${d}', '${i.title}', ${setlistText})">
                             <i class="fas fa-copy"></i> コピー
                         </button>
-                        <button class="btn-action btn-share" onclick="execShare(event, '${d}', '${i.title}', \`${s}\`)">
+                        <button class="btn-action btn-share" onclick="execShare(event, '${d}', '${i.title}', ${setlistText})">
                             <i class="fab fa-x-twitter"></i> ポスト
                         </button>
                     </div>
@@ -277,25 +282,22 @@
                     </div>
                 </div>
             </div>`).join('');
-
-        const sortedV = Object.entries(vm).sort((a,b)=>b[1]-a[1]).slice(0, 10);
-        const maxV = sortedV[0] ? sortedV[0][1] : 1;
-        document.getElementById('venueRanking').innerHTML = sortedV.map((e, idx) => `
-            <div class="rank-item">
-                <div class="rank-num">${idx+1}</div>
-                <div class="rank-info">
-                    <div class="rank-name">${e[0]}</div>
-                    <div style="display:flex; align-items:center;">
-                        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/maxV)*100}%; background:#999;"></div></div>
-                        <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}公演</span>
-                    </div>
-                </div>
-            </div>`).join('');
     }
 
     function toggleFavorite(id, e) { e.stopPropagation(); const i = favorites.indexOf(id); if(i===-1) favorites.push(id); else favorites.splice(i,1); localStorage.setItem('tebasen_favs', JSON.stringify(favorites)); e.currentTarget.classList.toggle('active'); }
-    function execCopy(e, d, t, s) { e.stopPropagation(); navigator.clipboard.writeText(`【${d}】${t}\n\n${s}\n#手羽セン`).then(()=>alert("コピーしました")); }
-    function execShare(e, d, t, s) { e.stopPropagation(); window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`【${d}】${t}\n\n${s}\n#手羽セン`)}`, '_blank'); }
+    
+    function execCopy(e, d, t, setlist) { 
+        e.stopPropagation(); 
+        const text = generateShareText(d, t, setlist);
+        navigator.clipboard.writeText(text).then(()=>alert("コピーしました")); 
+    }
+    
+    function execShare(e, d, t, setlist) { 
+        e.stopPropagation(); 
+        const text = generateShareText(d, t, setlist);
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank'); 
+    }
+
     function switchTab(p, b) { document.querySelectorAll('.page-content').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById(p).classList.add('active'); b.classList.add('active'); if(p==='rank-page') generateRanking(); window.scrollTo(0,0); }
     
     async function submitData() {
