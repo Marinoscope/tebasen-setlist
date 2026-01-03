@@ -9,7 +9,6 @@
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
         
-        /* ヘッダー */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
         header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
@@ -31,7 +30,7 @@
         .admin-input { width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .logout-btn { background: #eee; color: #666; border: none; padding: 8px; border-radius: 5px; font-size: 0.7rem; float: right; cursor: pointer; }
 
-        /* フィルターエリア */
+        /* フィルター */
         .filter-area { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; }
         .filter-controls { display: flex; gap: 10px; align-items: center; }
@@ -39,7 +38,7 @@
         .fav-filter-btn { padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
         .fav-filter-btn.active { background: var(--fav-pink); color: white; border-color: var(--fav-pink); }
 
-        /* ライブカード */
+        /* カード */
         .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; }
         .live-title { color: var(--main-orange); font-weight: bold; font-size: 1.1rem; padding-right: 40px; margin: 5px 0; }
         .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
@@ -48,13 +47,14 @@
         .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .setlist-area.active { display: block; }
 
-        /* セトリ内のコピー・ポストボタン */
+        /* セトリ内楽曲リンク */
+        .song-link { color: #333; cursor: pointer; text-decoration: none; display: block; padding: 8px 0; border-bottom: 1px solid #f8f8f8; transition: 0.2s; }
+        .song-link:hover { color: var(--main-orange); background: #fffaf0; }
+
         .action-btns { display: flex; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-        .btn-action { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; cursor: pointer; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .btn-copy { background: #f0f0f0; color: #555; }
-        .btn-copy:active { background: #e0e0e0; }
         .btn-share { background: #000; color: #fff; }
-        .btn-share:active { background: #333; }
 
         /* ランキング */
         .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -62,6 +62,7 @@
         .rank-info { flex: 1; }
         .rank-name { font-weight: bold; margin-bottom: 4px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
         .prob-badge { font-size: 0.7rem; background: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffcc80; }
+        .rank-dates { font-size: 0.65rem; color: #888; margin-top: 4px; display: flex; justify-content: space-between; }
         .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; margin-top: 5px; }
         .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s ease-out; }
 
@@ -122,9 +123,9 @@
             <span style="display:block; font-size:0.7rem; font-weight:normal; color:#888; margin-top:5px;">期待値 = 直近10公演の演奏率</span>
         </h3>
         <div id="songRanking"></div>
+        
         <h3 style="border-left: 4px solid var(--main-orange); padding-left: 10px; margin-top: 35px; font-size: 1.1rem;">会場別 公演数</h3>
-        <div id="venueRanking"></div>
-    </div>
+        <div id="venueRankingArea"></div> </div>
 </div>
 
 <footer>
@@ -135,7 +136,6 @@
         <a href="https://www.instagram.com/tebasaki_sensation/" target="_blank"><i class="fab fa-instagram"></i></a>
         <a href="https://www.tiktok.com/@tebasen" target="_blank"><i class="fab fa-tiktok"></i></a>
     </div>
-    <div class="disclaimer" style="font-size:0.7rem; color:#bbb; padding:0 10px; margin-top:10px;">当サイトはファンが運営する非公式サイトであり、手羽先センセーション公式とは一切関係ありません。</div>
     <div class="copyright">&copy; 2025 手羽セン セトリログ by Marino_scope</div>
 </footer>
 
@@ -146,64 +146,37 @@
     let favorites = JSON.parse(localStorage.getItem('tebasen_favs')) || [];
     let isFavOnly = false;
 
-    // ポストテキスト生成
+    // ヘルパー: 共有テキスト
     function generateShareText(date, title, setlistArray) {
         const cleanDate = date.split(' ')[0];
         const numberedSetlist = setlistArray.map((s, i) => `${i + 1}. ${s}`).join('\n');
         return `${cleanDate}\n${title}\n\n${numberedSetlist}\n\n#手羽センセトリログ でチェック🐓\n${SHARE_URL}\n#手羽先センセーション`;
     }
 
+    // 楽曲名タップ検索機能
+    function searchBySong(e, songName) {
+        e.stopPropagation();
+        switchTab('live-page', document.querySelectorAll('.tab-btn')[0]);
+        const input = document.getElementById('searchInput');
+        input.value = songName;
+        handleFilter();
+        window.scrollTo({ top: document.querySelector('.filter-area').offsetTop - 80, behavior: 'smooth' });
+    }
+
     // 管理パネル
     function toggleAdminPanel() {
         if (localStorage.getItem('tebasen_admin_login') !== 'true') {
-            const pw = prompt("パスワードを入力してください");
-            if (pw === "tebasen123") {
-                localStorage.setItem('tebasen_admin_login', 'true');
-                checkAdminUI();
-                document.getElementById('adminForm').style.display = 'block';
-            }
+            const pw = prompt("パスワード");
+            if (pw === "tebasen123") { localStorage.setItem('tebasen_admin_login', 'true'); checkAdminUI(); document.getElementById('adminForm').style.display = 'block'; }
         } else {
             const f = document.getElementById('adminForm');
             f.style.display = (f.style.display === 'none' || f.style.display === '') ? 'block' : 'none';
         }
     }
+    function logoutAdmin() { if (confirm("ログアウト？")) { localStorage.removeItem('tebasen_admin_login'); location.reload(); } }
+    function checkAdminUI() { const btn = document.getElementById('adminBtn'); if (localStorage.getItem('tebasen_admin_login') === 'true') btn.classList.add('logged-in'); }
 
-    function logoutAdmin() {
-        if (confirm("ログアウトしますか？")) {
-            localStorage.removeItem('tebasen_admin_login');
-            location.reload();
-        }
-    }
-
-    function checkAdminUI() {
-        const btn = document.getElementById('adminBtn');
-        if (localStorage.getItem('tebasen_admin_login') === 'true') {
-            btn.classList.add('logged-in');
-        } else {
-            btn.classList.remove('logged-in');
-        }
-    }
-
-    function parsePost() {
-        const text = document.getElementById('ai_paste').value;
-        if (!text) return;
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
-        if (lines[0]) {
-            const titleMatch = lines[0].match(/『(.+)』/);
-            document.getElementById('f_title').value = titleMatch ? titleMatch[1] : lines[0];
-            const dateMatch = lines[0].match(/(\d{1,2})\/(\d{1,2})/);
-            if (dateMatch) {
-                const year = new Date().getFullYear();
-                document.getElementById('f_date').value = `${year}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}T19:00`;
-            }
-        }
-        if (lines[1] && lines[1].startsWith('@')) document.getElementById('f_venue').value = lines[1].substring(1);
-        const setlistLines = lines.filter(l => (l.match(/^[①-⑩\d]/) || l.includes('位')) && !l.includes('#'));
-        const cleanSetlist = setlistLines.map(l => l.replace(/^[①-⑩\d]+/, '').replace(/.*位\s*/, '').replace(/[🆕🥇🥈🥉]/g, '').trim());
-        document.getElementById('f_setlist').value = cleanSetlist.join('\n');
-    }
-
-    // 通信・表示
+    // データ取得
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
@@ -242,89 +215,104 @@
             const isFav = favorites.includes(i.uniqueId);
             const d = i.date ? i.date.replace(/-/g, '/').substring(0, 16) : "不明";
             const setlistJson = JSON.stringify(i.setlist).replace(/"/g, '&quot;');
-            return `<div class="live-card" onclick="toggleSetlist(this)">
+            return `<div class="live-card" onclick="this.querySelector('.setlist-area').classList.toggle('active')">
                 <i class="fas fa-star fav-btn ${isFav?'active':''}" onclick="toggleFavorite('${i.uniqueId}', event)"></i>
                 <div class="meta"><span><i class="fas fa-calendar-alt"></i> ${d}</span><span style="margin-left:10px;"><i class="fas fa-map-marker-alt"></i> ${i.venue}</span></div>
                 <div class="live-title">${i.title}</div>
                 <div class="setlist-area">
-                    ${i.setlist.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f8f8f8;">${idx+1}. ${song}</div>`).join('')}
+                    ${i.setlist.map((song, idx) => `<div class="song-link" onclick="searchBySong(event, '${song.replace(/'/g, "\\'")}')">${idx+1}. ${song} <i class="fas fa-search" style="font-size:0.7rem; opacity:0.3; margin-left:5px;"></i></div>`).join('')}
                     ${i.note ? `<div style="color:var(--main-orange); font-size:0.85rem; margin-top:10px;">※ ${i.note}</div>` : ''}
                     <div class="action-btns">
-                        <button class="btn-action btn-copy" onclick="execCopy(event, '${d}', '${i.title}', '${setlistJson}')">
-                            <i class="fas fa-copy"></i> コピー
-                        </button>
-                        <button class="btn-action btn-share" onclick="execShare(event, '${d}', '${i.title}', '${setlistJson}')">
-                            <i class="fab fa-x-twitter"></i> ポスト
-                        </button>
+                        <button class="btn-action btn-copy" onclick="execCopy(event, '${d}', '${i.title}', '${setlistJson}')">コピー</button>
+                        <button class="btn-action btn-share" onclick="execShare(event, '${d}', '${i.title}', '${setlistJson}')">ポスト</button>
                     </div>
                 </div>
             </div>`;
         }).join('');
     }
 
-    // 開閉制御（ボタン等のクリックを無視する）
-    function toggleSetlist(card) {
-        const area = card.querySelector('.setlist-area');
-        area.classList.toggle('active');
-    }
-
-    function toggleFavorite(id, e) { 
-        e.stopPropagation(); 
-        const i = favorites.indexOf(id); 
-        if(i===-1) favorites.push(id); else favorites.splice(i,1); 
-        localStorage.setItem('tebasen_favs', JSON.stringify(favorites)); 
-        e.currentTarget.classList.toggle('active'); 
-    }
-    
-    function execCopy(e, d, t, setlistJson) { 
-        e.stopPropagation(); // 親要素の開閉イベントを止める
-        const setlist = JSON.parse(setlistJson.replace(/&quot;/g, '"'));
-        const text = generateShareText(d, t, setlist);
-        navigator.clipboard.writeText(text).then(()=>alert("コピーしました")); 
-    }
-    
-    function execShare(e, d, t, setlistJson) { 
-        e.stopPropagation(); // 親要素の開閉イベントを止める
-        const setlist = JSON.parse(setlistJson.replace(/&quot;/g, '"'));
-        const text = generateShareText(d, t, setlist);
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank'); 
-    }
-
-    function switchTab(p, b) { document.querySelectorAll('.page-content').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById(p).classList.add('active'); b.classList.add('active'); if(p==='rank-page') generateRanking(); window.scrollTo(0,0); }
-    
-    async function submitData() {
-        const payload = {
-            date: document.getElementById('f_date').value.replace('T', ' '),
-            title: document.getElementById('f_title').value,
-            venue: document.getElementById('f_venue').value,
-            setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
-            note: document.getElementById('f_note').value
-        };
-        const btn = document.getElementById('submitBtn'); btn.disabled = true;
-        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-        alert("登録完了"); location.reload();
-    }
-
     function generateRanking() {
-        const sm = {}; const vm = {}; const l10 = allData.slice(0, 10); const l10sm = {};
+        const sm = {}; const vm = {}; const history = {};
+        const l10 = allData.slice(0, 10); const l10sm = {};
+        
         allData.forEach(i => {
-            i.setlist.forEach(s => { const t = s.trim(); if(t && !["MC","SE"].includes(t)) sm[t] = (sm[t]||0)+1; });
+            const d = i.date.split(' ')[0];
+            i.setlist.forEach(s => { 
+                const t = s.trim(); if(!t || ["MC","SE"].includes(t)) return;
+                sm[t] = (sm[t]||0)+1; 
+                if(!history[t]) history[t] = { first: d, last: d };
+                history[t].last = d; // 降順データなので最後に見つかるのが「初披露」になるためロジック調整
+            });
             if(i.venue) vm[i.venue] = (vm[i.venue]||0)+1;
         });
+
+        // 日付の初・直近を正しくセット（allDataは降順なので[0]が最新）
+        const sortedDates = [...allData].sort((a,b)=>new Date(a.date)-new Date(b.date));
+        const songStats = {};
+        sortedDates.forEach(i => {
+            const d = i.date.split(' ')[0];
+            i.setlist.forEach(s => {
+                const t = s.trim(); if(!t || ["MC","SE"].includes(t)) return;
+                if(!songStats[t]) songStats[t] = { first: d };
+                songStats[t].last = d;
+            });
+        });
+
         l10.forEach(i => { const us = new Set(i.setlist.map(s=>s.trim())); us.forEach(s => { if(s && !["MC","SE"].includes(s)) l10sm[s] = (l10sm[s]||0)+1; }); });
-        const sorted = Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0, 15);
-        const max = sorted[0] ? sorted[0][1] : 1;
-        document.getElementById('songRanking').innerHTML = sorted.map((e, idx) => `
+        const sortedSongs = Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0, 15);
+        const max = sortedSongs[0] ? sortedSongs[0][1] : 1;
+
+        document.getElementById('songRanking').innerHTML = sortedSongs.map((e, idx) => `
             <div class="rank-item">
                 <div class="rank-num">${idx+1}</div>
                 <div class="rank-info">
                     <div class="rank-name"><span>${e[0]}</span><span class="prob-badge">期待値 ${(l10sm[e[0]]||0)*10}%</span></div>
-                    <div style="display:flex; align-items:center;">
-                        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/max)*100}%"></div></div>
-                        <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}回</span>
+                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/max)*100}%"></div></div>
+                    <div class="rank-dates">
+                        <span>初: ${songStats[e[0]].first}</span>
+                        <span style="font-weight:bold; color:#333;">計 ${e[1]}回</span>
+                        <span>直近: ${songStats[e[0]].last}</span>
                     </div>
                 </div>
             </div>`).join('');
+
+        const sortedV = Object.entries(vm).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+        const maxV = sortedV[0] ? sortedV[0][1] : 1;
+        document.getElementById('venueRankingArea').innerHTML = sortedV.map((e, idx) => `
+            <div class="rank-item">
+                <div class="rank-num">${idx+1}</div>
+                <div class="rank-info">
+                    <div class="rank-name">${e[0]}</div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/maxV)*100}%; background:#999;"></div></div>
+                        <span style="font-size:0.8rem; margin-left:10px; font-weight:bold;">${e[1]}公演</span>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    function toggleFavorite(id, e) { e.stopPropagation(); const i = favorites.indexOf(id); if(i===-1) favorites.push(id); else favorites.splice(i,1); localStorage.setItem('tebasen_favs', JSON.stringify(favorites)); e.currentTarget.classList.toggle('active'); }
+    function execCopy(e, d, t, setlistJson) { e.stopPropagation(); const setlist = JSON.parse(setlistJson.replace(/&quot;/g, '"')); navigator.clipboard.writeText(generateShareText(d, t, setlist)).then(()=>alert("コピーしました")); }
+    function execShare(e, d, t, setlistJson) { e.stopPropagation(); const setlist = JSON.parse(setlistJson.replace(/&quot;/g, '"')); window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(generateShareText(d, t, setlist))}`, '_blank'); }
+    function switchTab(p, b) { document.querySelectorAll('.page-content').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active')); document.getElementById(p).classList.add('active'); b.classList.add('active'); if(p==='rank-page') generateRanking(); window.scrollTo(0,0); }
+    
+    function parsePost() {
+        const text = document.getElementById('ai_paste').value; if (!text) return;
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+        if (lines[0]) {
+            const tm = lines[0].match(/『(.+)』/); document.getElementById('f_title').value = tm ? tm[1] : lines[0];
+            const dm = lines[0].match(/(\d{1,2})\/(\d{1,2})/); if (dm) { const y = new Date().getFullYear(); document.getElementById('f_date').value = `${y}-${dm[1].padStart(2, '0')}-${dm[2].padStart(2, '0')}T19:00`; }
+        }
+        if (lines[1] && lines[1].startsWith('@')) document.getElementById('f_venue').value = lines[1].substring(1);
+        const sl = lines.filter(l => (l.match(/^[①-⑩\d]/) || l.includes('位')) && !l.includes('#'));
+        document.getElementById('f_setlist').value = sl.map(l => l.replace(/^[①-⑩\d]+/, '').replace(/.*位\s*/, '').replace(/[🆕🥇🥈🥉]/g, '').trim()).join('\n');
+    }
+
+    async function submitData() {
+        const payload = { date: document.getElementById('f_date').value.replace('T', ' '), title: document.getElementById('f_title').value, venue: document.getElementById('f_venue').value, setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""), note: document.getElementById('f_note').value };
+        const btn = document.getElementById('submitBtn'); btn.disabled = true;
+        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        alert("完了"); location.reload();
     }
 
     checkAdminUI();
