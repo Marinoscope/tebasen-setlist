@@ -10,7 +10,6 @@
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
         
-        /* ヘッダー */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
         header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
@@ -24,55 +23,36 @@
         .page-content { display: none; }
         .page-content.active { display: block; }
 
-        /* フィルター */
-        .filter-area { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; }
-        .filter-controls { display: flex; gap: 10px; }
-        .filter-controls select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-
-        /* ライブカード */
         .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
         .live-title { color: var(--main-orange); font-weight: bold; font-size: 1.1rem; padding-right: 40px; margin: 5px 0; }
         .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
-        .fav-btn { position: absolute; top: 15px; right: 15px; font-size: 1.6rem; color: #eee; cursor: pointer; z-index: 5; }
-        .fav-btn.active { color: var(--fav-pink); }
         
         .card-footer { display: flex; justify-content: flex-end; margin-top: 10px; }
         .toggle-details-btn { background: #fffaf0; color: var(--main-orange); border: 1px solid var(--main-orange); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
         .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .setlist-area.active { display: block; }
-        .song-link { color: #333; cursor: pointer; display: block; padding: 10px 0; border-bottom: 1px solid #f8f8f8; }
 
-        /* ボタン類 */
         .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
         .btn-full { grid-column: span 2; }
         .btn-action { padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .btn-copy { background: #f0f0f0; color: #555; }
-        .btn-share { background: #000; color: #fff; }
-        .btn-image { background: var(--main-orange); color: #fff; margin-top: 8px; }
+        .btn-share-img { background: var(--main-orange); color: #fff; box-shadow: 0 4px 0 #cc7a00; }
+        .btn-share-img:active { transform: translateY(2px); box-shadow: 0 2px 0 #cc7a00; }
 
-        /* 画像生成用の専用デザイン（通常は見えない） */
+        /* 画像生成用の専用デザイン */
         #capture-target {
             position: absolute; left: -9999px; width: 500px; padding: 40px;
             background: linear-gradient(135deg, #ffffff 0%, #fff5e6 100%);
-            border-radius: 0; color: #333;
+            color: #333;
         }
         .canvas-header { border-bottom: 3px solid var(--main-orange); padding-bottom: 15px; margin-bottom: 20px; }
-        .canvas-title { font-size: 24px; font-weight: bold; color: var(--main-orange); margin: 5px 0; }
-        .canvas-meta { font-size: 16px; color: #666; }
-        .canvas-list { font-size: 18px; line-height: 1.8; }
+        .canvas-title { font-size: 26px; font-weight: bold; color: var(--main-orange); margin: 5px 0; }
+        .canvas-meta { font-size: 16px; color: #666; font-weight: bold; }
+        .canvas-list { font-size: 20px; line-height: 1.7; }
         .canvas-footer { margin-top: 30px; text-align: right; font-size: 14px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
 
-        /* ランキング */
-        .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
-        .rank-num { font-weight: bold; color: var(--main-orange); font-size: 1.2rem; min-width: 25px; }
-        .rank-info { flex: 1; }
-        .last-perform-days { font-size: 0.75rem; color: var(--fav-pink); font-weight: bold; background: #fff0f0; padding: 2px 6px; border-radius: 4px; }
-        .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; margin-top: 5px; }
-        .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; }
-
-        footer { background: #444; color: #ddd; padding: 40px 15px; text-align: center; margin-top: 50px; }
+        footer { background: #333; color: #ddd; padding: 40px 15px; text-align: center; margin-top: 50px; }
     </style>
 </head>
 <body>
@@ -90,19 +70,11 @@
 
 <div class="container">
     <div id="live-page" class="page-content active">
-        <div class="filter-area">
-            <div class="search-box"><input type="text" id="searchInput" placeholder="楽曲・会場で検索..." oninput="handleFilter()"></div>
-            <div class="filter-controls">
-                <select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select>
-                <button id="favFilterBtn" onclick="toggleFavFilter()" style="padding:10px; border-radius:8px; border:1px solid #ddd; background:white;">★ お気に入り</button>
-            </div>
-        </div>
         <div id="loading">取得中...</div>
         <div id="liveList"></div>
     </div>
     <div id="rank-page" class="page-content">
         <div id="songRanking"></div>
-        <div id="venueRankingArea"></div>
     </div>
 </div>
 
@@ -119,7 +91,6 @@
 <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
     let allData = [];
-    let favorites = JSON.parse(localStorage.getItem('tebasen_favs')) || [];
 
     async function fetchData() {
         try {
@@ -134,11 +105,9 @@
     function renderList(data) {
         const list = document.getElementById('liveList');
         list.innerHTML = data.map(i => {
-            const isFav = favorites.includes(String(i.id || i.date + i.title));
             const d = i.date ? i.date.substring(0, 16).replace(/-/g, '/') : "不明";
             return `
             <div class="live-card">
-                <i class="fas fa-star fav-btn ${isFav?'active':''}" onclick="toggleFavorite('${i.id || i.date+i.title}', event)"></i>
                 <div class="meta">${d}</div>
                 <div class="live-title">${i.title}</div>
                 <div class="meta">${i.venue}</div>
@@ -146,15 +115,53 @@
                     <button class="toggle-details-btn" onclick="toggleCardDetails(this)">詳細を表示</button>
                 </div>
                 <div class="setlist-area">
-                    ${i.setlist.map((song, idx) => `<div class="song-link">${idx+1}. ${song}</div>`).join('')}
+                    ${i.setlist.map((song, idx) => `<div>${idx+1}. ${song}</div>`).join('')}
                     <div class="action-btns">
-                        <button class="btn-action btn-copy" onclick="execCopy('${d}', '${i.title}', '${i.setlist.join(',')}')"><i class="fas fa-copy"></i> コピー</button>
-                        <button class="btn-action btn-share" onclick="execShare('${d}', '${i.title}', '${i.setlist.join(',')}')"><i class="fab fa-x-twitter"></i> ポスト</button>
-                        <button class="btn-action btn-image btn-full" onclick="downloadSetlistImage('${d}', '${i.title}', '${i.venue}', '${i.setlist.join(',')}')"><i class="fas fa-camera"></i> セトリ画像を保存</button>
+                        <button class="btn-action btn-copy" onclick="execCopy('${d}', '${i.title}', '${i.setlist.join(',')}')">テキストコピー</button>
+                        <button class="btn-action btn-share-img btn-full" onclick="shareSetlistImage('${d}', '${i.title}', '${i.venue}', '${i.setlist.join(',')}')">
+                            <i class="fas fa-share-square"></i> 画像をポスト
+                        </button>
                     </div>
                 </div>
             </div>`;
         }).join('');
+    }
+
+    // 画像を生成して共有メニューを呼び出す
+    async function shareSetlistImage(date, title, venue, setlistStr) {
+        const setlist = setlistStr.split(',');
+        document.getElementById('c-date').innerText = date.split(' ')[0];
+        document.getElementById('c-title').innerText = title;
+        document.getElementById('c-venue').innerText = "@ " + venue;
+        document.getElementById('c-list').innerHTML = setlist.map((s, i) => `<div>${i+1}. ${s}</div>`).join('');
+
+        const target = document.getElementById('capture-target');
+        const canvas = await html2canvas(target, { scale: 2 });
+        
+        // CanvasをBlob（ファイルデータ）に変換
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], `setlist_${date.split(' ')[0]}.png`, { type: 'image/png' });
+            
+            // Web Share API が使えるかチェック
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: '手羽セン セトリログ',
+                        text: `${date.split(' ')[0]} ${title} のセトリです！ #手羽センセトリログ`
+                    });
+                } catch (err) {
+                    console.error("Share failed:", err);
+                }
+            } else {
+                // 使えない場合は通常のダウンロードにフォールバック
+                const link = document.createElement('a');
+                link.download = `setlist_${date.split(' ')[0]}.png`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                alert("お使いのブラウザが直接共有に対応していないため、画像を保存しました。Xで投稿してください。");
+            }
+        });
     }
 
     function toggleCardDetails(btn) {
@@ -163,59 +170,11 @@
         btn.innerText = isActive ? "詳細を閉じる" : "詳細を表示";
     }
 
-    // 画像生成ロジック
-    async function downloadSetlistImage(date, title, venue, setlistStr) {
-        const setlist = setlistStr.split(',');
-        document.getElementById('c-date').innerText = date.split(' ')[0];
-        document.getElementById('c-title').innerText = title;
-        document.getElementById('c-venue').innerText = "@ " + venue;
-        document.getElementById('c-list').innerHTML = setlist.map((s, i) => `<div>${i+1}. ${s}</div>`).join('');
-
-        // 表示を待ってからキャプチャ
-        const target = document.getElementById('capture-target');
-        const canvas = await html2canvas(target, { scale: 2, backgroundColor: null });
-        const link = document.createElement('a');
-        link.download = `setlist_${date.split(' ')[0]}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }
-
-    // 既存のランキング・お気に入り・検索・共有機能などはそのまま維持
-    function execCopy(d, t, s) {
-        const text = `${d}\n${t}\n\n${s.split(',').map((song,i)=>`${i+1}. ${song}`).join('\n')}\n\n#手羽センセトリログ`;
-        navigator.clipboard.writeText(text).then(()=>alert("コピーしました"));
-    }
-
-    function execShare(d, t, s) {
-        const text = `${d}\n${t}\n\n${s.split(',').map((song,i)=>`${i+1}. ${song}`).join('\n')}\n\n#手羽センセトリログ`;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-    }
-
     function switchTab(p, b) {
         document.querySelectorAll('.page-content').forEach(x=>x.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
         document.getElementById(p).classList.add('active');
         b.classList.add('active');
-        if(p==='rank-page') generateRanking();
-    }
-
-    function generateRanking() {
-        const sm = {}; const today = new Date();
-        allData.forEach(i => {
-            i.setlist.forEach(s => {
-                const t = s.trim(); if(!t || ["MC","SE"].includes(t)) return;
-                sm[t] = (sm[t]||0)+1;
-            });
-        });
-        const sorted = Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0, 15);
-        document.getElementById('songRanking').innerHTML = sorted.map((e, idx) => `
-            <div class="rank-item">
-                <div class="rank-num">${idx+1}</div>
-                <div class="rank-info">
-                    <div style="font-weight:bold;">${e[0]}</div>
-                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/sorted[0][1])*100}%"></div></div>
-                </div>
-            </div>`).join('');
     }
 
     fetchData();
