@@ -10,7 +10,6 @@
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
         
-        /* ヘッダー */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
         header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
@@ -24,7 +23,7 @@
         .page-content { display: none; }
         .page-content.active { display: block; }
 
-        /* 登録フォーム */
+        /* 登録・編集フォーム */
         #adminForm { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid var(--main-orange); }
         .admin-input { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
         .type-btn { padding: 8px 15px; border: 1px solid #ddd; border-radius: 20px; background: #f9f9f9; font-size: 0.85rem; cursor: pointer; margin: 2px; }
@@ -36,7 +35,7 @@
         .filter-controls { display: flex; gap: 10px; }
         .filter-controls select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; }
 
-        /* ライブカード & 詳細表示 (ここが修正ポイント) */
+        /* カード */
         .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
         .badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 5px; }
         .badge-type { background: #333; color: white; }
@@ -45,18 +44,15 @@
         .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
         .note-text { font-size: 0.8rem; color: #555; background: #f9f9f9; padding: 8px; border-radius: 5px; margin: 8px 0; border-left: 3px solid #ddd; }
 
-        .card-footer { display: flex; justify-content: flex-end; margin-top: 10px; }
+        .card-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
         .toggle-details-btn { background: #fffaf0; color: var(--main-orange); border: 1px solid var(--main-orange); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        .edit-btn { background: #eee; color: #666; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: none; }
 
-        /* デフォルトで非表示にする設定 */
         .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .setlist-area.active { display: block; }
 
-        /* 共有ボタン */
         .btn-share-main { width: 100%; margin-top: 15px; padding: 15px; border-radius: 10px; background: var(--main-orange); color: #fff; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 0 #cc7a00; }
-        .btn-share-main:disabled { background: #ccc; box-shadow: none; }
 
-        /* ランキング */
         .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; margin: 8px 0; overflow: hidden; }
         .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s; }
@@ -71,7 +67,7 @@
 <div class="sticky-header">
     <header>
         <h1>手羽セン セトリログ</h1>
-        <button id="adminBtn" onclick="toggleAdminPanel()"><i class="fas fa-cog"></i> 登録</button>
+        <button id="adminBtn" onclick="toggleAdminPanel()"><i class="fas fa-cog"></i> 管理</button>
     </header>
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('live-page', this)">ライブ一覧</button>
@@ -82,13 +78,15 @@
 <div class="container">
     <div id="live-page" class="page-content active">
         <div id="adminForm">
-            <h3 style="margin-top:0">ライブ登録</h3>
-            <textarea id="ai_paste" class="admin-input" rows="3" placeholder="公式ポストをコピペして解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
-            <button onclick="smartParse()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold;">✨ 内容を読み取る</button>
+            <h3 id="formTitle" style="margin-top:0">ライブ登録</h3>
+            <input type="hidden" id="f_id" value="">
+            <textarea id="ai_paste" class="admin-input" rows="2" placeholder="公式ポストを解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
+            <button onclick="smartParse()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold; cursor:pointer;">✨ 読み取る</button>
+            
             <input type="datetime-local" id="f_date" class="admin-input">
             <input type="text" id="f_title" placeholder="ライブ名" class="admin-input">
             <input type="text" id="f_venue" placeholder="会場名" class="admin-input">
-            <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px;">種別(Type)</div>
+            
             <div id="typeSelector" style="margin-bottom:15px;">
                 <button type="button" class="type-btn" onclick="selectType('単独', this)">単独</button>
                 <button type="button" class="type-btn" onclick="selectType('対バン', this)">対バン</button>
@@ -97,54 +95,49 @@
                 <button type="button" class="type-btn" onclick="selectType('リリイベ', this)">リリイベ</button>
             </div>
             <input type="hidden" id="f_type" value="">
-            <input type="text" id="f_tag" placeholder="追加タグ (新衣装, 生誕祭 など / カンマ区切り)" class="admin-input">
+            <input type="text" id="f_tag" placeholder="追加タグ (カンマ区切り)" class="admin-input">
             <textarea id="f_setlist" rows="8" placeholder="セトリ (1曲1行)" class="admin-input"></textarea>
             <input type="text" id="f_note" placeholder="備考" class="admin-input">
-            <button id="submitBtn" onclick="submitData()" style="width:100%; background:#333; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold;">スプレッドシートに保存</button>
+            <button id="submitBtn" onclick="submitData()" style="width:100%; background:#333; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">登録</button>
+            <button id="cancelEditBtn" onclick="resetForm()" style="width:100%; background:none; color:#888; border:none; padding:10px; margin-top:5px; display:none;">編集をキャンセル</button>
         </div>
 
         <div class="filter-area">
             <div class="search-box"><input type="text" id="searchInput" placeholder="楽曲・会場で検索..." oninput="handleFilter()"></div>
-            <div class="filter-controls">
-                <select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select>
-            </div>
+            <div class="filter-controls"><select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select></div>
         </div>
         <div id="loading" style="text-align:center; padding:20px;">取得中...</div>
         <div id="liveList"></div>
     </div>
-
     <div id="rank-page" class="page-content">
-        <h3 style="border-left: 4px solid var(--main-orange); padding-left:10px;">楽曲ランキング (TOP15)</h3>
+        <h3 style="border-left:4px solid var(--main-orange); padding-left:10px;">楽曲ランキング</h3>
         <div id="songRanking"></div>
-        <h3 style="border-left: 4px solid var(--main-orange); padding-left:10px; margin-top:30px;">会場ランキング</h3>
+        <h3 style="border-left:4px solid var(--main-orange); padding-left:10px; margin-top:30px;">会場ランキング</h3>
         <div id="venueRankingArea"></div>
     </div>
 </div>
 
-<div id="capture-target" style="position: absolute; left: -9999px; width: 500px; padding: 40px; background: white; color: #333;">
+<div id="capture-target" style="position: absolute; left: -9999px; width: 500px; padding: 40px; background: white;">
     <div id="c-date" style="font-size:16px;"></div>
-    <div id="c-title" style="font-size:26px; font-weight:bold; color:var(--main-orange); margin: 5px 0;"></div>
+    <div id="c-title" style="font-size:26px; font-weight:bold; color:var(--main-orange); margin:5px 0;"></div>
     <div id="c-venue" style="font-size:16px; margin-bottom:20px;"></div>
     <div id="c-list" style="font-size:20px; line-height:1.7;"></div>
-    <div style="margin-top: 30px; text-align: right; font-size: 14px; color: #999; border-top: 1px solid #eee; padding-top: 10px;">手羽セン セトリログ by Marino_scope</div>
 </div>
 
 <footer>
-    <span style="font-weight:bold; color:var(--main-orange);">手羽先センセーション 公式リンク集</span>
     <div class="footer-sns-links">
         <a href="https://tebasen.com/" target="_blank"><i class="fas fa-globe"></i></a>
         <a href="https://x.com/tebasen_info" target="_blank"><i class="fab fa-x-twitter"></i></a>
         <a href="https://youtube.com/channel/UCUk-hyJxfad25z1nbeGu19w" target="_blank"><i class="fab fa-youtube"></i></a>
         <a href="https://www.instagram.com/tebasaki_sensation/" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://www.tiktok.com/@tebasen" target="_blank"><i class="fab fa-tiktok"></i></a>
     </div>
     <div class="copyright">&copy; 2025 手羽セン セトリログ by Marino_scope</div>
 </footer>
 
 <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
-    const SHARE_URL = "https://marinoscope.github.io/tebasen-setlist/";
     let allData = [];
+    let isAdmin = localStorage.getItem('tebasen_admin') === 'true';
 
     async function fetchData() {
         try {
@@ -154,6 +147,7 @@
             updateYearOptions();
             renderList(allData);
             document.getElementById('loading').style.display = 'none';
+            if(isAdmin) document.querySelectorAll('.edit-btn').forEach(b => b.style.display = 'block');
         } catch (e) { console.error(e); }
     }
 
@@ -165,13 +159,16 @@
             const typeB = i.type ? `<span class="badge badge-type">${i.type}</span>` : '';
             const noteHtml = i.note ? `<div class="note-text">${i.note}</div>` : '';
             return `
-            <div class="live-card">
+            <div class="live-card" id="card-${i.id}">
                 <div style="margin-bottom:5px;">${typeB}${tags}</div>
                 <div class="meta"><i class="fas fa-calendar-alt"></i> ${d}</div>
                 <div class="live-title">${i.title}</div>
                 <div class="meta"><i class="fas fa-map-marker-alt"></i> ${i.venue}</div>
                 ${noteHtml}
-                <div class="card-footer"><button class="toggle-details-btn" onclick="toggleCardDetails(this)">詳細を表示</button></div>
+                <div class="card-footer">
+                    <button class="edit-btn" onclick="startEdit('${i.id}')" style="${isAdmin?'display:block':''}">編集</button>
+                    <button class="toggle-details-btn" onclick="toggleCardDetails(this)">詳細を表示</button>
+                </div>
                 <div class="setlist-area">
                     ${i.setlist.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f9f9f9;">${idx+1}. ${song}</div>`).join('')}
                     <button class="btn-share-main" onclick="shareSetlistCombined(this, '${d}', '${i.title}', '${i.venue}', '${i.setlist.join(',')}')">
@@ -182,10 +179,85 @@
         }).join('');
     }
 
+    // --- 編集機能 ---
+    function startEdit(id) {
+        const item = allData.find(i => i.id == id);
+        if(!item) return;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('adminForm').style.display = 'block';
+        document.getElementById('formTitle').innerText = "ライブ修正";
+        document.getElementById('submitBtn').innerText = "修正を保存";
+        document.getElementById('cancelEditBtn').style.display = 'block';
+        
+        document.getElementById('f_id').value = item.id;
+        document.getElementById('f_date').value = item.date.replace(' ', 'T');
+        document.getElementById('f_title').value = item.title;
+        document.getElementById('f_venue').value = item.venue;
+        document.getElementById('f_type').value = item.type;
+        document.getElementById('f_tag').value = item.tag || "";
+        document.getElementById('f_setlist').value = item.setlist.join('\n');
+        document.getElementById('f_note').value = item.note || "";
+        
+        document.querySelectorAll('.type-btn').forEach(b => {
+            if(b.innerText === item.type) b.classList.add('selected');
+            else b.classList.remove('selected');
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('formTitle').innerText = "ライブ登録";
+        document.getElementById('submitBtn').innerText = "登録";
+        document.getElementById('f_id').value = "";
+        document.getElementById('adminForm').querySelectorAll('input, textarea').forEach(el => el.value = "");
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    // --- 管理パネル開閉 ---
+    function toggleAdminPanel() {
+        if (!isAdmin) {
+            const pw = prompt("管理パスワードを入力してください");
+            if (pw === "tebasen123") {
+                isAdmin = true;
+                localStorage.setItem('tebasen_admin', 'true');
+                document.querySelectorAll('.edit-btn').forEach(b => b.style.display = 'block');
+            } else {
+                alert("パスワードが違います");
+                return;
+            }
+        }
+        const f = document.getElementById('adminForm');
+        f.style.display = (f.style.display === 'block') ? 'none' : 'block';
+    }
+
+    async function submitData() {
+        const btn = document.getElementById('submitBtn');
+        const payload = {
+            id: document.getElementById('f_id').value || null, // IDがあれば修正、なければ新規
+            date: document.getElementById('f_date').value.replace('T', ' '),
+            title: document.getElementById('f_title').value,
+            venue: document.getElementById('f_venue').value,
+            setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
+            note: document.getElementById('f_note').value,
+            type: document.getElementById('f_type').value,
+            tag: document.getElementById('f_tag').value
+        };
+        if(!payload.title || !payload.date) return alert("日付とタイトルは必須です");
+        btn.disabled = true; btn.innerText = "送信中...";
+        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        location.reload();
+    }
+
+    // --- 既存機能の維持 ---
     function toggleCardDetails(btn) {
         const area = btn.closest('.live-card').querySelector('.setlist-area');
         area.classList.toggle('active');
         btn.innerText = area.classList.contains('active') ? "詳細を閉じる" : "詳細を表示";
+    }
+
+    function selectType(val, btn) {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected'); document.getElementById('f_type').value = val;
     }
 
     function handleFilter() {
@@ -210,14 +282,12 @@
         const text = document.getElementById('ai_paste').value;
         if (!text) return;
         const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
-        if (lines[0]) {
-            const titleMatch = text.match(/『(.+)』/);
-            document.getElementById('f_title').value = titleMatch ? titleMatch[1] : lines[0];
-            const dateMatch = text.match(/(\d{1,2})\/(\d{1,2})/);
-            if (dateMatch) {
-                const now = new Date();
-                document.getElementById('f_date').value = `${now.getFullYear()}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}T19:00`;
-            }
+        const titleMatch = text.match(/『(.+)』/);
+        if(titleMatch) document.getElementById('f_title').value = titleMatch[1];
+        const dateMatch = text.match(/(\d{1,2})\/(\d{1,2})/);
+        if (dateMatch) {
+            const now = new Date();
+            document.getElementById('f_date').value = `${now.getFullYear()}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}T19:00`;
         }
         const venueMatch = text.match(/@([\w\p{L}]+)/u);
         if (venueMatch) document.getElementById('f_venue').value = venueMatch[1];
@@ -228,48 +298,16 @@
     async function shareSetlistCombined(btn, date, title, venue, setlistStr) {
         const originalText = btn.innerHTML;
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        const cleanDate = date.split(' ')[0];
-        document.getElementById('c-date').innerText = cleanDate;
+        document.getElementById('c-date').innerText = date.split(' ')[0];
         document.getElementById('c-title').innerText = title;
         document.getElementById('c-venue').innerText = "@ " + venue;
         document.getElementById('c-list').innerHTML = setlistStr.split(',').map((s, idx) => `<div>${idx+1}. ${s}</div>`).join('');
         const canvas = await html2canvas(document.getElementById('capture-target'), { scale: 1.5 });
         canvas.toBlob(async (blob) => {
             const file = new File([blob], `setlist.png`, { type: 'image/png' });
-            const text = `${cleanDate}\n${title}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
-            if (navigator.share) { await navigator.share({ files: [file], text: text }).catch(()=>{}); }
-            else { const link = document.createElement('a'); link.download = "setlist.png"; link.href = URL.createObjectURL(blob); link.click(); }
+            if (navigator.share) await navigator.share({ files: [file], text: `${title} セトリ\n#手羽セン\n${SHARE_URL}` }).catch(()=>{});
             btn.disabled = false; btn.innerHTML = originalText;
         });
-    }
-
-    async function submitData() {
-        const btn = document.getElementById('submitBtn');
-        const payload = {
-            date: document.getElementById('f_date').value.replace('T', ' '),
-            title: document.getElementById('f_title').value,
-            venue: document.getElementById('f_venue').value,
-            setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
-            note: document.getElementById('f_note').value,
-            type: document.getElementById('f_type').value,
-            tag: document.getElementById('f_tag').value
-        };
-        btn.disabled = true;
-        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-        location.reload();
-    }
-
-    function selectType(val, btn) {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected'); document.getElementById('f_type').value = val;
-    }
-
-    function toggleAdminPanel() {
-        const pw = prompt("パスワード");
-        if(pw === "tebasen123") {
-            const f = document.getElementById('adminForm');
-            f.style.display = (f.style.display==='block')?'none':'block';
-        }
     }
 
     function generateRanking() {
@@ -292,9 +330,6 @@
                     <div style="font-size:0.7rem; color:#888;">計 ${e[1]}回 / 期待値 ${(l10sm[e[0]]||0)*10}%</div>
                 </div>
             </div>`).join('');
-        const vsorted = Object.entries(vm).sort((a,b)=>b[1]-a[1]).slice(0, 10);
-        document.getElementById('venueRankingArea').innerHTML = vsorted.map((e, idx) => `
-            <div class="rank-item"><div style="font-weight:bold; width:25px;">${idx+1}</div><div style="flex:1"><div style="font-weight:bold;">${e[0]}</div><div style="font-size:0.7rem; color:#888;">${e[1]}公演</div></div></div>`).join('');
     }
 
     function switchTab(p, b) {
