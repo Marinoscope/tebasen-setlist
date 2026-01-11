@@ -24,19 +24,19 @@
         .page-content { display: none; }
         .page-content.active { display: block; }
 
-        /* 管理フォームUI */
+        /* 登録フォーム */
         #adminForm { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid var(--main-orange); }
         .admin-input { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
         .type-btn { padding: 8px 15px; border: 1px solid #ddd; border-radius: 20px; background: #f9f9f9; font-size: 0.85rem; cursor: pointer; margin: 2px; }
         .type-btn.selected { background: var(--main-orange); color: white; border-color: var(--main-orange); }
 
-        /* フィルターエリア */
+        /* フィルター */
         .filter-area { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; }
         .filter-controls { display: flex; gap: 10px; }
         .filter-controls select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; }
 
-        /* ライブカード & バッジ */
+        /* ライブカード & 詳細表示 (ここが修正ポイント) */
         .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
         .badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 5px; }
         .badge-type { background: #333; color: white; }
@@ -45,6 +45,14 @@
         .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
         .note-text { font-size: 0.8rem; color: #555; background: #f9f9f9; padding: 8px; border-radius: 5px; margin: 8px 0; border-left: 3px solid #ddd; }
 
+        .card-footer { display: flex; justify-content: flex-end; margin-top: 10px; }
+        .toggle-details-btn { background: #fffaf0; color: var(--main-orange); border: 1px solid var(--main-orange); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+
+        /* デフォルトで非表示にする設定 */
+        .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .setlist-area.active { display: block; }
+
+        /* 共有ボタン */
         .btn-share-main { width: 100%; margin-top: 15px; padding: 15px; border-radius: 10px; background: var(--main-orange); color: #fff; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 0 #cc7a00; }
         .btn-share-main:disabled { background: #ccc; box-shadow: none; }
 
@@ -53,7 +61,6 @@
         .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; margin: 8px 0; overflow: hidden; }
         .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s; }
 
-        /* フッター */
         footer { background: #333; color: #ddd; padding: 40px 15px; text-align: center; margin-top: 50px; }
         .footer-sns-links { display: flex; justify-content: center; gap: 20px; margin: 20px 0; font-size: 1.8rem; }
         .footer-sns-links a { color: inherit; text-decoration: none; }
@@ -78,11 +85,9 @@
             <h3 style="margin-top:0">ライブ登録</h3>
             <textarea id="ai_paste" class="admin-input" rows="3" placeholder="公式ポストをコピペして解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
             <button onclick="smartParse()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold;">✨ 内容を読み取る</button>
-            
             <input type="datetime-local" id="f_date" class="admin-input">
             <input type="text" id="f_title" placeholder="ライブ名" class="admin-input">
             <input type="text" id="f_venue" placeholder="会場名" class="admin-input">
-            
             <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px;">種別(Type)</div>
             <div id="typeSelector" style="margin-bottom:15px;">
                 <button type="button" class="type-btn" onclick="selectType('単独', this)">単独</button>
@@ -104,7 +109,6 @@
                 <select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select>
             </div>
         </div>
-
         <div id="loading" style="text-align:center; padding:20px;">取得中...</div>
         <div id="liveList"></div>
     </div>
@@ -142,7 +146,6 @@
     const SHARE_URL = "https://marinoscope.github.io/tebasen-setlist/";
     let allData = [];
 
-    // --- メイン機能 ---
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
@@ -179,7 +182,12 @@
         }).join('');
     }
 
-    // --- フィルター機能 (復元) ---
+    function toggleCardDetails(btn) {
+        const area = btn.closest('.live-card').querySelector('.setlist-area');
+        area.classList.toggle('active');
+        btn.innerText = area.classList.contains('active') ? "詳細を閉じる" : "詳細を表示";
+    }
+
     function handleFilter() {
         const q = document.getElementById('searchInput').value.toLowerCase().trim();
         const year = document.getElementById('yearFilter').value;
@@ -194,10 +202,10 @@
     function updateYearOptions() {
         const years = [...new Set(allData.map(i => i.date ? i.date.substring(0, 4) : null).filter(y => y))].sort((a,b)=>b-a);
         const s = document.getElementById('yearFilter');
+        s.innerHTML = '<option value="">すべての年</option>';
         years.forEach(y => { const o = document.createElement('option'); o.value = y; o.textContent = y + "年"; s.appendChild(o); });
     }
 
-    // --- スマート解析機能 (復元) ---
     function smartParse() {
         const text = document.getElementById('ai_paste').value;
         if (!text) return;
@@ -217,7 +225,6 @@
         document.getElementById('f_setlist').value = setlistLines.map(l => l.replace(/^[①-⑩\d]\s?/, '').trim()).join('\n');
     }
 
-    // --- その他共有・登録ロジック ---
     async function shareSetlistCombined(btn, date, title, venue, setlistStr) {
         const originalText = btn.innerHTML;
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -263,12 +270,6 @@
             const f = document.getElementById('adminForm');
             f.style.display = (f.style.display==='block')?'none':'block';
         }
-    }
-
-    function toggleCardDetails(btn) {
-        const area = btn.closest('.live-card').querySelector('.setlist-area');
-        area.classList.toggle('active');
-        btn.innerText = area.classList.contains('active') ? "詳細を閉じる" : "詳細を表示";
     }
 
     function generateRanking() {
