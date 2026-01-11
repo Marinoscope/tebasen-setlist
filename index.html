@@ -1,3 +1,16 @@
+大丈夫です！落ち着いてください。
+
+拝見したところ、**「HTMLのボタン（見た目）」と「JavaScriptのプログラム（中身）」が、本来あるべき場所（タグの中）からはみ出してしまっている**のが原因です。
+
+具体的には、プログラムを書く場所（`<script>`〜`</script>`）の外側に、さらにプログラムやボタンを貼り付けてしまったため、画面が壊れ、コードが文字として表示されたり、ボタンが効かなくなったりしています。
+
+**これを全部きれいに整理整頓した「完全修復版」**を作りました。
+
+今の `index.html` の中身を**一度全部消して**、以下のコードを**丸ごと貼り付けて**ください。これで直ります！
+
+### index.html（完全修復・全機能入り）
+
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -10,6 +23,7 @@
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
         
+        /* ヘッダー */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
         header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
@@ -23,7 +37,7 @@
         .page-content { display: none; }
         .page-content.active { display: block; }
 
-        /* 登録・編集フォーム */
+        /* フォーム */
         #adminForm { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid var(--main-orange); }
         .admin-input { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
         .type-btn { padding: 8px 15px; border: 1px solid #ddd; border-radius: 20px; background: #f9f9f9; font-size: 0.85rem; cursor: pointer; margin: 2px; }
@@ -60,7 +74,7 @@
         .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s; }
         .prob-badge { font-size: 0.7rem; background: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffcc80; }
 
-        /* フッター復元 */
+        /* フッター */
         footer { background: #333; color: #ddd; padding: 40px 15px; text-align: center; margin-top: 50px; }
         .footer-sns-links { display: flex; justify-content: center; gap: 20px; margin: 20px 0; font-size: 1.8rem; }
         .footer-sns-links a { text-decoration: none; }
@@ -88,11 +102,14 @@
         <div id="adminForm">
             <h3 id="formTitle" style="margin-top:0">ライブ登録</h3>
             <input type="hidden" id="f_id" value="">
-            <textarea id="ai_paste" class="admin-input" rows="2" placeholder="ポスト解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
+            
+            <textarea id="ai_paste" class="admin-input" rows="2" placeholder="公式ポストを解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
             <button onclick="smartParse()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold; cursor:pointer;">✨ 読み取る</button>
+            
             <input type="datetime-local" id="f_date" class="admin-input">
             <input type="text" id="f_title" placeholder="ライブ名" class="admin-input">
             <input type="text" id="f_venue" placeholder="会場名" class="admin-input">
+            
             <div id="typeSelector" style="margin-bottom:15px;">
                 <button type="button" class="type-btn" onclick="selectType('単独', this)">単独</button>
                 <button type="button" class="type-btn" onclick="selectType('対バン', this)">対バン</button>
@@ -104,8 +121,10 @@
             <input type="text" id="f_tag" placeholder="追加タグ (カンマ区切り)" class="admin-input">
             <textarea id="f_setlist" rows="8" placeholder="セトリ (1曲1行)" class="admin-input"></textarea>
             <input type="text" id="f_note" placeholder="備考" class="admin-input">
+            
             <button id="submitBtn" onclick="submitData()" style="width:100%; background:#333; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">登録</button>
-            <button id="cancelEditBtn" onclick="resetForm()" style="width:100%; background:none; color:#888; border:none; padding:10px; margin-top:5px; display:none;">編集をキャンセル</button>
+            <button id="deleteBtn" onclick="deleteData()" style="width:100%; background:var(--fav-pink); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; margin-top:10px; display:none; cursor:pointer;">このライブを削除</button>
+            <button id="cancelEditBtn" onclick="resetForm()" style="width:100%; background:none; color:#888; border:none; padding:10px; margin-top:5px; display:none; cursor:pointer;">キャンセル</button>
         </div>
 
         <div class="filter-area">
@@ -115,6 +134,7 @@
         <div id="loading" style="text-align:center; padding:20px;">取得中...</div>
         <div id="liveList"></div>
     </div>
+
     <div id="rank-page" class="page-content">
         <h3 style="border-left:4px solid var(--main-orange); padding-left:10px;">楽曲演奏ランキング (TOP15)</h3>
         <div id="songRanking"></div>
@@ -188,7 +208,7 @@
         }).join('');
     }
 
-    // --- 共有機能（安定化） ---
+    // --- 共有機能 ---
     async function shareSetlistCombined(btn, date, title, venue, setlistStr) {
         const originalText = btn.innerHTML;
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 作成中...';
@@ -212,12 +232,12 @@
                 btn.disabled = false; btn.innerHTML = originalText;
             });
         } catch (e) {
-            alert("画像生成に失敗しました。時間をおいて再度お試しください。");
+            alert("画像生成に失敗しました。");
             btn.disabled = false; btn.innerHTML = originalText;
         }
     }
 
-    // --- ランキング復元 ---
+    // --- ランキング ---
     function generateRanking() {
         const sm = {}; const vm = {}; const l10sm = {};
         allData.forEach((i, idx) => {
@@ -268,23 +288,18 @@
         f.style.display = (f.style.display === 'block') ? 'none' : 'block';
     }
 
-<script>
-    // --- 編集機能 (修正版) ---
     function startEdit(id) {
         const i = allData.find(x => x.id == id);
         if(!i) return;
         
-        // 日付形式の変換 (YYYY/MM/DD HH:MM -> YYYY-MM-DDTHH:MM)
         let formattedDate = "";
-        if(i.date) {
-            formattedDate = i.date.replace(/\//g, '-').replace(' ', 'T');
-        }
+        if(i.date) formattedDate = i.date.replace(/\//g, '-').replace(' ', 'T');
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
         document.getElementById('adminForm').style.display = 'block';
         document.getElementById('formTitle').innerText = "ライブ修正";
         document.getElementById('f_id').value = i.id;
-        document.getElementById('f_date').value = formattedDate; // ここが修正ポイント
+        document.getElementById('f_date').value = formattedDate;
         document.getElementById('f_title').value = i.title;
         document.getElementById('f_venue').value = i.venue;
         document.getElementById('f_type').value = i.type;
@@ -292,7 +307,6 @@
         document.getElementById('f_setlist').value = i.setlist.join('\n');
         document.getElementById('f_note').value = i.note || "";
         
-        // 削除ボタンを表示
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('cancelEditBtn').style.display = 'block';
 
@@ -301,30 +315,11 @@
         });
     }
 
-    // 削除の実行
-    async function deleteData() {
-        const id = document.getElementById('f_id').value;
-        if(!id || !confirm("このライブ情報を完全に削除しますか？")) return;
-        
-        const btn = document.getElementById('deleteBtn');
-        btn.disabled = true; btn.innerText = "削除中...";
-        
-        await fetch(GAS_API_URL, { 
-            method: "POST", 
-            body: JSON.stringify({ action: 'delete', id: id }) 
-        });
-        location.reload();
-    }
-</script>
-
-<button id="submitBtn" onclick="submitData()" style="width:100%; background:#333; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">登録</button>
-<button id="deleteBtn" onclick="deleteData()" style="width:100%; background:var(--fav-pink); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; margin-top:10px; display:none; cursor:pointer;">このライブを削除</button>
-<button id="cancelEditBtn" onclick="resetForm()" style="width:100%; background:none; color:#888; border:none; padding:10px; margin-top:5px; display:none;">キャンセル</button>
-
     function resetForm() {
         document.getElementById('formTitle').innerText = "ライブ登録";
         document.getElementById('f_id').value = "";
         document.getElementById('adminForm').querySelectorAll('input, textarea').forEach(el => el.value = "");
+        document.getElementById('deleteBtn').style.display = 'none';
         document.getElementById('cancelEditBtn').style.display = 'none';
         document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
     }
@@ -343,6 +338,15 @@
         };
         btn.disabled = true; btn.innerText = "送信中...";
         await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        location.reload();
+    }
+
+    async function deleteData() {
+        const id = document.getElementById('f_id').value;
+        if(!id || !confirm("本当に削除しますか？")) return;
+        const btn = document.getElementById('deleteBtn');
+        btn.disabled = true; btn.innerText = "削除中...";
+        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: 'delete', id: id }) });
         location.reload();
     }
 
@@ -403,3 +407,5 @@
 </script>
 </body>
 </html>
+
+```
