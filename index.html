@@ -7,7 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
+        :root {
+            --main-orange: #f39800;
+            --bg: #f4f4f4;
+            --fav-pink: #ff4757;
+
+            /* 追加：コピペ用（おすすめの落ち着いたブルー） */
+            --copy-blue: #3b82f6;
+            --copy-blue-shadow: #2563eb;
+        }
+
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
 
         /* ヘッダー */
@@ -52,8 +61,44 @@
         .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
         .setlist-area.active { display: block; }
 
-        .btn-share-main { width: 100%; margin-top: 15px; padding: 15px; border-radius: 10px; background: var(--main-orange); color: #fff; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 0 #cc7a00; }
+        .btn-share-main {
+            width: 100%;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: var(--main-orange);
+            color: #fff;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 #cc7a00;
+        }
         .btn-share-main:disabled { background: #ccc; box-shadow: none; }
+
+        /* 追加：コピペボタン色（バランス重視） */
+        .btn-copy-main {
+            width: 100%;
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            background: var(--copy-blue);
+            color: #fff;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 var(--copy-blue-shadow);
+        }
+        .btn-copy-main:disabled { background: #ccc; box-shadow: none; }
 
         /* ランキング */
         .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -157,7 +202,10 @@
 
 <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
+
+    // ★ここ：共有文に載せたいURL（GitHub Pages）
     const SHARE_URL = "https://marinoscope.github.io/tebasen-setlist/";
+
     let allData = [];
     let isAdmin = localStorage.getItem('tebasen_admin') === 'true';
 
@@ -166,7 +214,6 @@
             const res = await fetch(GAS_API_URL);
             allData = await res.json();
 
-            // date が壊れてても落ちないように
             allData.sort((a, b) => {
                 const da = Date.parse((a.date || "").replace(' ', 'T').replace(/\//g, '-')) || 0;
                 const db = Date.parse((b.date || "").replace(' ', 'T').replace(/\//g, '-')) || 0;
@@ -203,6 +250,13 @@
                 </div>
                 <div class="setlist-area">
                     ${setlistArr.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f9f9f9;">${idx+1}. ${song}</div>`).join('')}
+
+                    <!-- 追加：コピペ（ブルー） -->
+                    <button class="btn-copy-main js-copy" data-id="${i.id}">
+                        <i class="fas fa-copy"></i> セトリをコピペ
+                    </button>
+
+                    <!-- 共有（オレンジ） -->
                     <button class="btn-share-main js-share" data-id="${i.id}">
                         <i class="fas fa-share-square"></i> セトリを共有
                     </button>
@@ -211,18 +265,79 @@
         }).join('');
     }
 
-    // クリックを一括で拾う（イベントデリゲーション：共有のみ）
+    // クリックを一括で拾う（イベントデリゲーション：コピペ＋共有）
     document.addEventListener('click', (e) => {
+        const copyBtn = e.target.closest('.js-copy');
+        if (copyBtn) {
+            const id = copyBtn.dataset.id;
+            const live = allData.find(x => String(x.id) === String(id));
+            if (!live) return;
+            copySetlistFromLive(copyBtn, live);
+            return;
+        }
+
         const shareBtn = e.target.closest('.js-share');
         if (shareBtn) {
             const id = shareBtn.dataset.id;
             const live = allData.find(x => String(x.id) === String(id));
             if (!live) return;
             shareSetlistFromLive(shareBtn, live);
+            return;
         }
     });
 
-    // --- 共有機能（安全版：liveオブジェクトを受け取る） ---
+    // --- コピペ機能（URLも入れる） ---
+    async function copySetlistFromLive(btn, live) {
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> コピー中...';
+
+        try {
+            const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
+            const cleanDate = dateText.split(' ')[0];
+            const title = live.title || "";
+            const venue = live.venue || "";
+            const setlist = Array.isArray(live.setlist) ? live.setlist : [];
+
+            const text =
+`${cleanDate}
+${title}
+@ ${venue}
+
+${setlist.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+
+#手羽先センセーション #手羽センセトリログ
+${SHARE_URL}`;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+
+            btn.innerHTML = '<i class="fas fa-check"></i> コピーしました';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }, 900);
+
+        } catch (e) {
+            console.error(e);
+            alert("コピーに失敗しました。");
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
+
+    // --- 共有機能（URLも入れる） ---
     async function shareSetlistFromLive(btn, live) {
         const originalText = btn.innerHTML;
         btn.disabled = true;
@@ -230,7 +345,6 @@
 
         const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
         const cleanDate = dateText.split(' ')[0];
-
         const setlist = Array.isArray(live.setlist) ? live.setlist : [];
 
         document.getElementById('c-date').innerText = cleanDate;
@@ -256,6 +370,8 @@
                     if (!blob) throw new Error("blob is null");
 
                     const file = new File([blob], `setlist_${cleanDate}.png`, { type: 'image/png' });
+
+                    // ★ここ：URLを必ず含める
                     const shareText = `${cleanDate}\n${live.title || ""}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
 
                     if (navigator.share && navigator.canShare?.({ files: [file] })) {
@@ -473,7 +589,6 @@
         const venueMatch = text.match(/@([\w\p{L}]+)/u);
         if (venueMatch) document.getElementById('f_venue').value = venueMatch[1];
 
-        // 行頭の番号/SE/MC を意図するなら ^ を全体に効かせる
         const setlistLines = lines.filter(l => l.match(/^(?:[①-⑩\d]|SE|MC)/));
         document.getElementById('f_setlist').value = setlistLines
             .map(l => l.replace(/^(?:[①-⑩]|\d{1,2}[.)]?)\s?/, '').trim())
