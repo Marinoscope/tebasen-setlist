@@ -12,9 +12,12 @@
             --bg: #f4f4f4;
             --fav-pink: #ff4757;
 
-            /* 追加：コピペ用（おすすめの落ち着いたブルー） */
+            /* コピー用（落ち着いたブルー） */
             --copy-blue: #3b82f6;
             --copy-blue-shadow: #2563eb;
+
+            /* お気に入り用 */
+            --star-gold: #f5b301;
         }
 
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
@@ -42,14 +45,58 @@
         /* フィルター */
         .filter-area { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; }
-        .filter-controls { display: flex; gap: 10px; }
-        .filter-controls select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; }
+        .filter-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .filter-controls select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        .filter-controls .full { grid-column: 1 / -1; }
+
+        .fav-only {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #666;
+            user-select: none;
+        }
+        .fav-only input { transform: scale(1.15); }
 
         /* カード */
         .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+        .card-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
         .badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 5px; }
         .badge-type { background: #333; color: white; }
         .badge-tag { background: white; color: var(--main-orange); border: 1px solid var(--main-orange); }
+
+        .fav-btn {
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #777;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            flex-shrink: 0;
+        }
+        .fav-btn i { color: #bbb; }
+        .fav-btn.active { color: #333; }
+        .fav-btn.active i { color: var(--star-gold); }
+
         .live-title { color: var(--main-orange); font-weight: bold; font-size: 1.1rem; margin: 5px 0; }
         .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
         .note-text { font-size: 0.8rem; color: #555; background: #f9f9f9; padding: 8px; border-radius: 5px; margin: 8px 0; border-left: 3px solid #ddd; }
@@ -63,7 +110,7 @@
 
         .btn-share-main {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 12px;
             padding: 15px;
             border-radius: 10px;
             background: var(--main-orange);
@@ -80,10 +127,9 @@
         }
         .btn-share-main:disabled { background: #ccc; box-shadow: none; }
 
-        /* 追加：コピペボタン色（バランス重視） */
         .btn-copy-main {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 12px;
             padding: 15px;
             border-radius: 10px;
             background: var(--copy-blue);
@@ -163,8 +209,33 @@
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="楽曲・会場で検索..." oninput="handleFilter()">
             </div>
+
             <div class="filter-controls">
-                <select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select>
+                <!-- 年 -->
+                <select id="yearFilter" onchange="handleFilter()">
+                    <option value="">すべての年</option>
+                </select>
+
+                <!-- 並び替え -->
+                <select id="sortSelect" onchange="handleFilter()">
+                    <option value="new">新しい順</option>
+                    <option value="old">古い順</option>
+                    <option value="songs_desc">曲数が多い順</option>
+                    <option value="venue_asc">会場名順</option>
+                </select>
+
+                <!-- コピー形式 -->
+                <select id="copyFormatSelect" class="full">
+                    <option value="full">コピー形式：フル</option>
+                    <option value="songs">コピー形式：曲だけ</option>
+                    <option value="sns">コピー形式：SNS短文</option>
+                </select>
+
+                <!-- お気に入りのみ -->
+                <label class="fav-only full">
+                    <input type="checkbox" id="favOnly" onchange="handleFilter()">
+                    お気に入りだけ表示
+                </label>
             </div>
         </div>
 
@@ -202,23 +273,58 @@
 
 <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
-
-    // ★ここ：共有文に載せたいURL（GitHub Pages）
     const SHARE_URL = "https://marinoscope.github.io/tebasen-setlist/";
+
+    // お気に入り保存
+    const FAV_KEY = "tebasen_favs";
 
     let allData = [];
     let isAdmin = localStorage.getItem('tebasen_admin') === 'true';
+    let favSet = new Set(loadFavs());
+
+    function loadFavs() {
+        try {
+            const raw = localStorage.getItem(FAV_KEY);
+            if (!raw) return [];
+            const arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr.map(String) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveFavs() {
+        localStorage.setItem(FAV_KEY, JSON.stringify([...favSet]));
+    }
+
+    function isFav(id) {
+        return favSet.has(String(id));
+    }
+
+    function toggleFav(id) {
+        const key = String(id);
+        if (favSet.has(key)) favSet.delete(key);
+        else favSet.add(key);
+        saveFavs();
+    }
+
+    function parseDateToMs(dateStr) {
+        // "YYYY-MM-DD HH:mm" or "YYYY/MM/DD HH:mm" を雑に吸収
+        if (!dateStr) return 0;
+        const s = String(dateStr).trim()
+            .replace(/\//g, '-')
+            .replace(' ', 'T');
+        const ms = Date.parse(s);
+        return Number.isFinite(ms) ? ms : 0;
+    }
 
     async function fetchData() {
         try {
             const res = await fetch(GAS_API_URL);
             allData = await res.json();
 
-            allData.sort((a, b) => {
-                const da = Date.parse((a.date || "").replace(' ', 'T').replace(/\//g, '-')) || 0;
-                const db = Date.parse((b.date || "").replace(' ', 'T').replace(/\//g, '-')) || 0;
-                return db - da;
-            });
+            // 初期表示は「新しい順」
+            allData.sort((a, b) => parseDateToMs(b.date) - parseDateToMs(a.date));
 
             updateYearOptions();
             renderList(allData);
@@ -230,33 +336,42 @@
 
     function renderList(data) {
         const list = document.getElementById('liveList');
+
         list.innerHTML = data.map(i => {
             const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
             const d = i.date ? i.date.substring(0, 16).replace(/-/g, '/') : "不明";
             const tags = i.tag ? i.tag.split(',').map(t => `<span class="badge badge-tag">${t.trim()}</span>`).join('') : '';
             const typeB = i.type ? `<span class="badge badge-type">${i.type}</span>` : '';
             const noteHtml = i.note ? `<div class="note-text">${i.note}</div>` : '';
+            const favActive = isFav(i.id);
 
             return `
             <div class="live-card">
-                <div style="margin-bottom:5px;">${typeB}${tags}</div>
+                <div class="card-top-row">
+                    <div>${typeB}${tags}</div>
+                    <button class="fav-btn js-fav ${favActive ? 'active' : ''}" data-id="${i.id}" aria-label="お気に入り">
+                        <i class="fa-solid fa-star"></i>
+                        <span style="font-size:0.85rem;">お気に入り</span>
+                    </button>
+                </div>
+
                 <div class="meta"><i class="fas fa-calendar-alt"></i> ${d}</div>
                 <div class="live-title">${i.title || ""}</div>
                 <div class="meta"><i class="fas fa-map-marker-alt"></i> ${i.venue || ""}</div>
                 ${noteHtml}
+
                 <div class="card-footer">
                     <button class="edit-btn" onclick="startEdit('${i.id}')" style="${isAdmin?'display:block':''}">編集</button>
                     <button class="toggle-details-btn" onclick="toggleCardDetails(this)">詳細を表示</button>
                 </div>
+
                 <div class="setlist-area">
                     ${setlistArr.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f9f9f9;">${idx+1}. ${song}</div>`).join('')}
 
-                    <!-- 追加：コピペ（ブルー） -->
                     <button class="btn-copy-main js-copy" data-id="${i.id}">
-                        <i class="fas fa-copy"></i> セトリをコピペ
+                        <i class="fas fa-copy"></i> セトリをコピーする
                     </button>
 
-                    <!-- 共有（オレンジ） -->
                     <button class="btn-share-main js-share" data-id="${i.id}">
                         <i class="fas fa-share-square"></i> セトリを共有
                     </button>
@@ -265,8 +380,21 @@
         }).join('');
     }
 
-    // クリックを一括で拾う（イベントデリゲーション：コピペ＋共有）
+    // クリックを一括で拾う（イベントデリゲーション）
     document.addEventListener('click', (e) => {
+        // お気に入り
+        const favBtn = e.target.closest('.js-fav');
+        if (favBtn) {
+            const id = favBtn.dataset.id;
+            toggleFav(id);
+            // ボタン見た目更新
+            favBtn.classList.toggle('active', isFav(id));
+            // 「お気に入りだけ表示」中なら反映
+            handleFilter();
+            return;
+        }
+
+        // コピー
         const copyBtn = e.target.closest('.js-copy');
         if (copyBtn) {
             const id = copyBtn.dataset.id;
@@ -276,6 +404,7 @@
             return;
         }
 
+        // 共有
         const shareBtn = e.target.closest('.js-share');
         if (shareBtn) {
             const id = shareBtn.dataset.id;
@@ -286,28 +415,43 @@
         }
     });
 
-    // --- コピペ機能（URLも入れる） ---
+    function getCopyMode() {
+        const sel = document.getElementById('copyFormatSelect');
+        return sel ? sel.value : "full";
+    }
+
+    function buildCopyText(live, mode) {
+        const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
+        const cleanDate = dateText.split(' ')[0];
+        const title = live.title || "";
+        const venue = live.venue || "";
+        const setlist = Array.isArray(live.setlist) ? live.setlist : [];
+        const songsNumbered = setlist.map((s, i) => `${i + 1}. ${s}`).join('\n');
+        const songsPlain = setlist.join(' / ');
+
+        if (mode === "songs") {
+            return songsNumbered;
+        }
+
+        if (mode === "sns") {
+            // SNS短文：情報を圧縮してURLも載せる
+            // （必要ならハッシュタグの有無はここで調整）
+            return `${cleanDate} ${title} @${venue}\nセトリ：${songsPlain}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
+        }
+
+        // full
+        return `${cleanDate}\n${title}\n@ ${venue}\n\n${songsNumbered}\n\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
+    }
+
+    // --- コピー機能（形式切り替え対応） ---
     async function copySetlistFromLive(btn, live) {
         const original = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> コピー中...';
 
         try {
-            const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
-            const cleanDate = dateText.split(' ')[0];
-            const title = live.title || "";
-            const venue = live.venue || "";
-            const setlist = Array.isArray(live.setlist) ? live.setlist : [];
-
-            const text =
-`${cleanDate}
-${title}
-@ ${venue}
-
-${setlist.map((s, i) => `${i + 1}. ${s}`).join('\n')}
-
-#手羽先センセーション #手羽センセトリログ
-${SHARE_URL}`;
+            const mode = getCopyMode();
+            const text = buildCopyText(live, mode);
 
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
@@ -371,7 +515,7 @@ ${SHARE_URL}`;
 
                     const file = new File([blob], `setlist_${cleanDate}.png`, { type: 'image/png' });
 
-                    // ★ここ：URLを必ず含める
+                    // URLを必ず含める
                     const shareText = `${cleanDate}\n${live.title || ""}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
 
                     if (navigator.share && navigator.canShare?.({ files: [file] })) {
@@ -546,11 +690,47 @@ ${SHARE_URL}`;
         btn.innerText = area.classList.contains('active') ? "詳細を閉じる" : "詳細を表示";
     }
 
+    function applySort(arr) {
+        const sort = document.getElementById('sortSelect')?.value || "new";
+        const copy = [...arr];
+
+        if (sort === "old") {
+            copy.sort((a, b) => parseDateToMs(a.date) - parseDateToMs(b.date));
+            return copy;
+        }
+
+        if (sort === "songs_desc") {
+            copy.sort((a, b) => {
+                const al = Array.isArray(a.setlist) ? a.setlist.length : 0;
+                const bl = Array.isArray(b.setlist) ? b.setlist.length : 0;
+                if (bl !== al) return bl - al;
+                return parseDateToMs(b.date) - parseDateToMs(a.date);
+            });
+            return copy;
+        }
+
+        if (sort === "venue_asc") {
+            copy.sort((a, b) => {
+                const av = (a.venue || "").toLowerCase();
+                const bv = (b.venue || "").toLowerCase();
+                if (av < bv) return -1;
+                if (av > bv) return 1;
+                return parseDateToMs(b.date) - parseDateToMs(a.date);
+            });
+            return copy;
+        }
+
+        // new
+        copy.sort((a, b) => parseDateToMs(b.date) - parseDateToMs(a.date));
+        return copy;
+    }
+
     function handleFilter() {
         const q = document.getElementById('searchInput').value.toLowerCase().trim();
         const year = document.getElementById('yearFilter').value;
+        const favOnly = document.getElementById('favOnly')?.checked;
 
-        const filtered = allData.filter(i => {
+        let filtered = allData.filter(i => {
             const title = (i.title || "").toLowerCase();
             const venue = (i.venue || "").toLowerCase();
             const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
@@ -561,9 +741,12 @@ ${SHARE_URL}`;
                 setlistArr.some(s => (s || "").toLowerCase().includes(q));
 
             const matchYear = !year || (i.date && i.date.startsWith(year));
-            return matchTxt && matchYear;
+            const matchFav = !favOnly || isFav(i.id);
+
+            return matchTxt && matchYear && matchFav;
         });
 
+        filtered = applySort(filtered);
         renderList(filtered);
     }
 
@@ -571,12 +754,815 @@ ${SHARE_URL}`;
         const years = [...new Set(allData.map(i => i.date ? i.date.substring(0, 4) : null).filter(y => y))].sort((a,b)=>b-a);
         const s = document.getElementById('yearFilter');
         s.innerHTML = '<option value="">すべての年</option>';
-        years.forEach(y => { const o = document.createElement('option'); o.value = y; o.textContent = y + "年"; s.appendChild(o); });
+        years.forEach(y => {
+            const o = document.createElement('option');
+            o.value = y;
+            o.textContent = y + "年";
+            s.appendChild(o);
+        });
     }
 
     function smartParse() {
         const text = document.getElementById('ai_paste').value; if (!text) return;
         const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+
+        const titleMatch = text.match(/『(.+)』/);
+        if(titleMatch) document.getElementById('f_title').value = titleMatch[1];
+
+        const dateMatch = text.match(/(\d{1,2})\/(\d{1,2})/);
+        if (dateMatch) {
+            const now = new Date();
+            document.getElementById('f_date').value = `${now.getFullYear()}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}T19:00`;
+        }
+
+        const venueMatch = text.match(/@([\w\p{L}]+)/u);
+        if (venueMatch) document.getElementById('f_venue').value = venueMatch[1];
+
+        const setlistLines = lines.filter(l => l.match(/^(?:[①-⑩\d]|SE|MC)/));
+        document.getElementById('f_setlist').value = setlistLines
+            .map(l => l.replace(/^(?:[①-⑩]|\d{1,2}[.)]?)\s?/, '').trim())
+            .join('\n');
+    }
+
+    function switchTab(p, b) {
+        document.querySelectorAll('.page-content').forEach(x=>x.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+        document.getElementById(p).classList.add('active'); b.classList.add('active');
+        if(p==='rank-page') generateRanking();
+    }
+
+    fetchData();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手羽セン セトリログ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --main-orange: #f39800;
+            --bg: #f4f4f4;
+            --fav-pink: #ff4757;
+
+            /* コピー用（落ち着いたブルー） */
+            --copy-blue: #3b82f6;
+            --copy-blue-shadow: #2563eb;
+
+            /* お気に入り用 */
+            --star-gold: #f5b301;
+        }
+
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
+
+        /* ヘッダー */
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        header { color: white; padding: 1rem; text-align: center; position: relative; }
+        header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
+        #adminBtn { position: absolute; right: 10px; top: 15px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 5px; padding: 6px 10px; font-size: 0.8rem; cursor: pointer; }
+
+        .tabs { display: flex; background: white; border-bottom: 1px solid #ddd; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--main-orange); border-bottom: 3px solid var(--main-orange); }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; min-height: 80vh; }
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+
+        /* フォーム */
+        #adminForm { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid var(--main-orange); }
+        .admin-input { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .type-btn { padding: 8px 15px; border: 1px solid #ddd; border-radius: 20px; background: #f9f9f9; font-size: 0.85rem; cursor: pointer; margin: 2px; }
+        .type-btn.selected { background: var(--main-orange); color: white; border-color: var(--main-orange); }
+
+        /* フィルター */
+        .filter-area { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .search-box input { width: 100%; padding: 12px 20px; border: 2px solid var(--main-orange); border-radius: 30px; box-sizing: border-box; outline: none; font-size: 16px; margin-bottom: 10px; }
+        .filter-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .filter-controls select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        .filter-controls .full { grid-column: 1 / -1; }
+
+        .fav-only {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #666;
+            user-select: none;
+        }
+        .fav-only input { transform: scale(1.15); }
+
+        /* カード */
+        .live-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+        .card-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 5px; }
+        .badge-type { background: #333; color: white; }
+        .badge-tag { background: white; color: var(--main-orange); border: 1px solid var(--main-orange); }
+
+        .fav-btn {
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #777;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            flex-shrink: 0;
+        }
+        .fav-btn i { color: #bbb; }
+        .fav-btn.active { color: #333; }
+        .fav-btn.active i { color: var(--star-gold); }
+
+        .live-title { color: var(--main-orange); font-weight: bold; font-size: 1.1rem; margin: 5px 0; }
+        .meta { font-size: 0.8rem; color: #777; margin-bottom: 5px; }
+        .note-text { font-size: 0.8rem; color: #555; background: #f9f9f9; padding: 8px; border-radius: 5px; margin: 8px 0; border-left: 3px solid #ddd; }
+
+        .card-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+        .toggle-details-btn { background: #fffaf0; color: var(--main-orange); border: 1px solid var(--main-orange); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        .edit-btn { background: #eee; color: #666; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: none; }
+
+        .setlist-area { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .setlist-area.active { display: block; }
+
+        .btn-share-main {
+            width: 100%;
+            margin-top: 12px;
+            padding: 15px;
+            border-radius: 10px;
+            background: var(--main-orange);
+            color: #fff;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 #cc7a00;
+        }
+        .btn-share-main:disabled { background: #ccc; box-shadow: none; }
+
+        .btn-copy-main {
+            width: 100%;
+            margin-top: 12px;
+            padding: 15px;
+            border-radius: 10px;
+            background: var(--copy-blue);
+            color: #fff;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 var(--copy-blue-shadow);
+        }
+        .btn-copy-main:disabled { background: #ccc; box-shadow: none; }
+
+        /* ランキング */
+        .rank-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .rank-bar-bg { background: #eee; height: 8px; border-radius: 4px; width: 100%; margin: 8px 0; overflow: hidden; }
+        .rank-bar-fill { background: var(--main-orange); height: 100%; border-radius: 4px; transition: width 1s; }
+        .prob-badge { font-size: 0.7rem; background: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffcc80; }
+
+        /* フッター */
+        footer { background: #333; color: #ddd; padding: 40px 15px; text-align: center; margin-top: 50px; }
+        .footer-sns-links { display: flex; justify-content: center; gap: 20px; margin: 20px 0; font-size: 1.8rem; }
+        .footer-sns-links a { text-decoration: none; }
+        .fa-globe { color: #f39800; } .fa-x-twitter { color: #fff; } .fa-youtube { color: #f00; } .fa-instagram { color: #ff7891; } .fa-tiktok { color: #00f2ea; }
+
+        /* 画像共有用隠しエリア */
+        #capture-target { position: absolute; left: -9999px; width: 500px; padding: 40px; background: white; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-header">
+    <header>
+        <h1>手羽セン セトリログ</h1>
+        <button id="adminBtn" onclick="toggleAdminPanel()"><i class="fas fa-cog"></i> 管理</button>
+    </header>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('live-page', this)">ライブ一覧</button>
+        <button class="tab-btn" onclick="switchTab('rank-page', this)">ランキング</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="live-page" class="page-content active">
+        <div id="adminForm">
+            <h3 id="formTitle" style="margin-top:0">ライブ登録</h3>
+            <input type="hidden" id="f_id" value="">
+
+            <textarea id="ai_paste" class="admin-input" rows="2" placeholder="公式ポストを解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
+            <button onclick="smartParse()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold; cursor:pointer;">✨ 読み取る</button>
+
+            <input type="datetime-local" id="f_date" class="admin-input">
+            <input type="text" id="f_title" placeholder="ライブ名" class="admin-input">
+            <input type="text" id="f_venue" placeholder="会場名" class="admin-input">
+
+            <div id="typeSelector" style="margin-bottom:15px;">
+                <button type="button" class="type-btn" onclick="selectType('単独', this)">単独</button>
+                <button type="button" class="type-btn" onclick="selectType('対バン', this)">対バン</button>
+                <button type="button" class="type-btn" onclick="selectType('フェス', this)">フェス</button>
+                <button type="button" class="type-btn" onclick="selectType('サーキット', this)">サーキット</button>
+                <button type="button" class="type-btn" onclick="selectType('リリイベ', this)">リリイベ</button>
+            </div>
+            <input type="hidden" id="f_type" value="">
+            <input type="text" id="f_tag" placeholder="追加タグ (カンマ区切り)" class="admin-input">
+            <textarea id="f_setlist" rows="8" placeholder="セトリ (1曲1行)" class="admin-input"></textarea>
+            <input type="text" id="f_note" placeholder="備考" class="admin-input">
+
+            <button id="submitBtn" onclick="submitData()" style="width:100%; background:#333; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">登録</button>
+            <button id="deleteBtn" onclick="deleteData()" style="width:100%; background:var(--fav-pink); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; margin-top:10px; display:none; cursor:pointer;">このライブを削除</button>
+            <button id="cancelEditBtn" onclick="resetForm()" style="width:100%; background:none; color:#888; border:none; padding:10px; margin-top:5px; display:none; cursor:pointer;">キャンセル</button>
+        </div>
+
+        <div class="filter-area">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="楽曲・会場で検索..." oninput="handleFilter()">
+            </div>
+
+            <div class="filter-controls">
+                <!-- 年 -->
+                <select id="yearFilter" onchange="handleFilter()">
+                    <option value="">すべての年</option>
+                </select>
+
+                <!-- 並び替え -->
+                <select id="sortSelect" onchange="handleFilter()">
+                    <option value="new">新しい順</option>
+                    <option value="old">古い順</option>
+                    <option value="songs_desc">曲数が多い順</option>
+                    <option value="venue_asc">会場名順</option>
+                </select>
+
+                <!-- コピー形式 -->
+                <select id="copyFormatSelect" class="full">
+                    <option value="full">コピー形式：フル</option>
+                    <option value="songs">コピー形式：曲だけ</option>
+                    <option value="sns">コピー形式：SNS短文</option>
+                </select>
+
+                <!-- お気に入りのみ -->
+                <label class="fav-only full">
+                    <input type="checkbox" id="favOnly" onchange="handleFilter()">
+                    お気に入りだけ表示
+                </label>
+            </div>
+        </div>
+
+        <div id="loading" style="text-align:center; padding:20px;">取得中...</div>
+        <div id="liveList"></div>
+    </div>
+
+    <div id="rank-page" class="page-content">
+        <h3 style="border-left:4px solid var(--main-orange); padding-left:10px;">楽曲演奏ランキング (TOP15)</h3>
+        <div id="songRanking"></div>
+        <h3 style="border-left:4px solid var(--main-orange); padding-left:10px; margin-top:30px;">会場別 公演数</h3>
+        <div id="venueRankingArea"></div>
+    </div>
+</div>
+
+<div id="capture-target">
+    <div id="c-date" style="font-size:16px;"></div>
+    <div id="c-title" style="font-size:26px; font-weight:bold; color:var(--main-orange); margin:5px 0;"></div>
+    <div id="c-venue" style="font-size:16px; margin-bottom:20px;"></div>
+    <div id="c-list" style="font-size:20px; line-height:1.7;"></div>
+    <div style="margin-top:30px; text-align:right; font-size:14px; color:#999; border-top:1px solid #eee; padding-top:10px;">手羽セン セトリログ by Marino_scope</div>
+</div>
+
+<footer>
+    <span style="font-weight:bold; color:var(--main-orange);">手羽先センセーション 公式リンク集</span>
+    <div class="footer-sns-links">
+        <a href="https://tebasen.com/" target="_blank"><i class="fas fa-globe"></i></a>
+        <a href="https://x.com/tebasen_info" target="_blank"><i class="fab fa-x-twitter"></i></a>
+        <a href="https://youtube.com/channel/UCUk-hyJxfad25z1nbeGu19w" target="_blank"><i class="fab fa-youtube"></i></a>
+        <a href="https://www.instagram.com/tebasaki_sensation/" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.tiktok.com/@tebasen" target="_blank"><i class="fab fa-tiktok"></i></a>
+    </div>
+    <div class="copyright">&copy; 2025 手羽セン セトリログ by Marino_scope</div>
+</footer>
+
+<script>
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwLNhdB0al28BDoXESU0ckdQZUU3DdNbX_2ycNwdFga1zvzS-mtTnXfp_E_Cva_Cpv-FQ/exec";
+    const SHARE_URL = "https://marinoscope.github.io/tebasen-setlist/";
+
+    // お気に入り保存
+    const FAV_KEY = "tebasen_favs";
+
+    let allData = [];
+    let isAdmin = localStorage.getItem('tebasen_admin') === 'true';
+    let favSet = new Set(loadFavs());
+
+    function loadFavs() {
+        try {
+            const raw = localStorage.getItem(FAV_KEY);
+            if (!raw) return [];
+            const arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr.map(String) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveFavs() {
+        localStorage.setItem(FAV_KEY, JSON.stringify([...favSet]));
+    }
+
+    function isFav(id) {
+        return favSet.has(String(id));
+    }
+
+    function toggleFav(id) {
+        const key = String(id);
+        if (favSet.has(key)) favSet.delete(key);
+        else favSet.add(key);
+        saveFavs();
+    }
+
+    function parseDateToMs(dateStr) {
+        // "YYYY-MM-DD HH:mm" or "YYYY/MM/DD HH:mm" を雑に吸収
+        if (!dateStr) return 0;
+        const s = String(dateStr).trim()
+            .replace(/\//g, '-')
+            .replace(' ', 'T');
+        const ms = Date.parse(s);
+        return Number.isFinite(ms) ? ms : 0;
+    }
+
+    async function fetchData() {
+        try {
+            const res = await fetch(GAS_API_URL);
+            allData = await res.json();
+
+            // 初期表示は「新しい順」
+            allData.sort((a, b) => parseDateToMs(b.date) - parseDateToMs(a.date));
+
+            updateYearOptions();
+            renderList(allData);
+            document.getElementById('loading').style.display = 'none';
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderList(data) {
+        const list = document.getElementById('liveList');
+
+        list.innerHTML = data.map(i => {
+            const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
+            const d = i.date ? i.date.substring(0, 16).replace(/-/g, '/') : "不明";
+            const tags = i.tag ? i.tag.split(',').map(t => `<span class="badge badge-tag">${t.trim()}</span>`).join('') : '';
+            const typeB = i.type ? `<span class="badge badge-type">${i.type}</span>` : '';
+            const noteHtml = i.note ? `<div class="note-text">${i.note}</div>` : '';
+            const favActive = isFav(i.id);
+
+            return `
+            <div class="live-card">
+                <div class="card-top-row">
+                    <div>${typeB}${tags}</div>
+                    <button class="fav-btn js-fav ${favActive ? 'active' : ''}" data-id="${i.id}" aria-label="お気に入り">
+                        <i class="fa-solid fa-star"></i>
+                        <span style="font-size:0.85rem;">お気に入り</span>
+                    </button>
+                </div>
+
+                <div class="meta"><i class="fas fa-calendar-alt"></i> ${d}</div>
+                <div class="live-title">${i.title || ""}</div>
+                <div class="meta"><i class="fas fa-map-marker-alt"></i> ${i.venue || ""}</div>
+                ${noteHtml}
+
+                <div class="card-footer">
+                    <button class="edit-btn" onclick="startEdit('${i.id}')" style="${isAdmin?'display:block':''}">編集</button>
+                    <button class="toggle-details-btn" onclick="toggleCardDetails(this)">詳細を表示</button>
+                </div>
+
+                <div class="setlist-area">
+                    ${setlistArr.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f9f9f9;">${idx+1}. ${song}</div>`).join('')}
+
+                    <button class="btn-copy-main js-copy" data-id="${i.id}">
+                        <i class="fas fa-copy"></i> セトリをコピーする
+                    </button>
+
+                    <button class="btn-share-main js-share" data-id="${i.id}">
+                        <i class="fas fa-share-square"></i> セトリを共有
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // クリックを一括で拾う（イベントデリゲーション）
+    document.addEventListener('click', (e) => {
+        // お気に入り
+        const favBtn = e.target.closest('.js-fav');
+        if (favBtn) {
+            const id = favBtn.dataset.id;
+            toggleFav(id);
+            // ボタン見た目更新
+            favBtn.classList.toggle('active', isFav(id));
+            // 「お気に入りだけ表示」中なら反映
+            handleFilter();
+            return;
+        }
+
+        // コピー
+        const copyBtn = e.target.closest('.js-copy');
+        if (copyBtn) {
+            const id = copyBtn.dataset.id;
+            const live = allData.find(x => String(x.id) === String(id));
+            if (!live) return;
+            copySetlistFromLive(copyBtn, live);
+            return;
+        }
+
+        // 共有
+        const shareBtn = e.target.closest('.js-share');
+        if (shareBtn) {
+            const id = shareBtn.dataset.id;
+            const live = allData.find(x => String(x.id) === String(id));
+            if (!live) return;
+            shareSetlistFromLive(shareBtn, live);
+            return;
+        }
+    });
+
+    function getCopyMode() {
+        const sel = document.getElementById('copyFormatSelect');
+        return sel ? sel.value : "full";
+    }
+
+    function buildCopyText(live, mode) {
+        const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
+        const cleanDate = dateText.split(' ')[0];
+        const title = live.title || "";
+        const venue = live.venue || "";
+        const setlist = Array.isArray(live.setlist) ? live.setlist : [];
+        const songsNumbered = setlist.map((s, i) => `${i + 1}. ${s}`).join('\n');
+        const songsPlain = setlist.join(' / ');
+
+        if (mode === "songs") {
+            return songsNumbered;
+        }
+
+        if (mode === "sns") {
+            // SNS短文：情報を圧縮してURLも載せる
+            // （必要ならハッシュタグの有無はここで調整）
+            return `${cleanDate} ${title} @${venue}\nセトリ：${songsPlain}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
+        }
+
+        // full
+        return `${cleanDate}\n${title}\n@ ${venue}\n\n${songsNumbered}\n\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
+    }
+
+    // --- コピー機能（形式切り替え対応） ---
+    async function copySetlistFromLive(btn, live) {
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> コピー中...';
+
+        try {
+            const mode = getCopyMode();
+            const text = buildCopyText(live, mode);
+
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+
+            btn.innerHTML = '<i class="fas fa-check"></i> コピーしました';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }, 900);
+
+        } catch (e) {
+            console.error(e);
+            alert("コピーに失敗しました。");
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
+
+    // --- 共有機能（URLも入れる） ---
+    async function shareSetlistFromLive(btn, live) {
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 作成中...';
+
+        const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
+        const cleanDate = dateText.split(' ')[0];
+        const setlist = Array.isArray(live.setlist) ? live.setlist : [];
+
+        document.getElementById('c-date').innerText = cleanDate;
+        document.getElementById('c-title').innerText = live.title || "";
+        document.getElementById('c-venue').innerText = "@ " + (live.venue || "");
+
+        const cList = document.getElementById('c-list');
+        cList.innerHTML = "";
+        setlist.forEach((s, idx) => {
+            const div = document.createElement('div');
+            div.textContent = `${idx + 1}. ${s}`;
+            cList.appendChild(div);
+        });
+
+        try {
+            const canvas = await html2canvas(
+                document.getElementById('capture-target'),
+                { scale: 1.5, useCORS: true }
+            );
+
+            canvas.toBlob(async (blob) => {
+                try {
+                    if (!blob) throw new Error("blob is null");
+
+                    const file = new File([blob], `setlist_${cleanDate}.png`, { type: 'image/png' });
+
+                    // URLを必ず含める
+                    const shareText = `${cleanDate}\n${live.title || ""}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
+
+                    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                        await navigator.share({ files: [file], text: shareText });
+                    } else if (navigator.share) {
+                        await navigator.share({ text: shareText }).catch(() => {});
+                        const link = document.createElement('a');
+                        link.download = `setlist_${cleanDate}.png`;
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = `setlist_${cleanDate}.png`;
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                    }
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            alert("画像生成に失敗しました。");
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    // --- ランキング（setlistが欠けても落ちない版） ---
+    function generateRanking() {
+        const sm = {}; const vm = {}; const l10sm = {};
+
+        allData.forEach((i, idx) => {
+            const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
+            setlistArr.forEach(s => {
+                const t = (s || "").trim();
+                if (!t || t === "SE" || t === "MC") return;
+                sm[t] = (sm[t] || 0) + 1;
+                if (idx < 10) l10sm[t] = (l10sm[t] || 0) + 1;
+            });
+            if (i.venue) vm[i.venue] = (vm[i.venue] || 0) + 1;
+        });
+
+        const sortedS = Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0, 15);
+        document.getElementById('songRanking').innerHTML = sortedS.map((e, idx) => `
+            <div class="rank-item">
+                <div style="font-weight:bold; width:25px;">${idx+1}</div>
+                <div style="flex:1">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold;">${e[0]}</span>
+                        <span class="prob-badge">直近10公演の期待値 ${(l10sm[e[0]]||0)*10}%</span>
+                    </div>
+                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${sortedS[0] ? (e[1]/sortedS[0][1])*100 : 0}%"></div></div>
+                    <div style="font-size:0.7rem; color:#888;">累計演奏回数: ${e[1]}回</div>
+                </div>
+            </div>`).join('');
+
+        const sortedV = Object.entries(vm).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+        document.getElementById('venueRankingArea').innerHTML = sortedV.map((e, idx) => `
+            <div class="rank-item">
+                <div style="font-weight:bold; width:25px;">${idx+1}</div>
+                <div style="flex:1">
+                    <div style="font-weight:bold;">${e[0]}</div>
+                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${sortedV[0] ? (e[1]/sortedV[0][1])*100 : 0}%; background:#999;"></div></div>
+                    <div style="font-size:0.7rem; color:#888;">公演数: ${e[1]}公演</div>
+                </div>
+            </div>`).join('');
+    }
+
+    // --- 管理・編集機能 ---
+    function toggleAdminPanel() {
+        if (!isAdmin) {
+            const pw = prompt("管理パスワードを入力してください");
+            if (pw === "tebasen123") {
+                isAdmin = true; localStorage.setItem('tebasen_admin', 'true');
+                document.querySelectorAll('.edit-btn').forEach(b => b.style.display = 'block');
+            } else { alert("パスワードが違います"); return; }
+        }
+        const f = document.getElementById('adminForm');
+        f.style.display = (f.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function startEdit(id) {
+        const i = allData.find(x => x.id == id);
+        if(!i) return;
+
+        let formattedDate = "";
+        if(i.date) formattedDate = i.date.replace(/\//g, '-').replace(' ', 'T');
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('adminForm').style.display = 'block';
+        document.getElementById('formTitle').innerText = "ライブ修正";
+        document.getElementById('f_id').value = i.id;
+        document.getElementById('f_date').value = formattedDate;
+        document.getElementById('f_title').value = i.title || "";
+        document.getElementById('f_venue').value = i.venue || "";
+        document.getElementById('f_type').value = i.type || "";
+        document.getElementById('f_tag').value = i.tag || "";
+        document.getElementById('f_setlist').value = (Array.isArray(i.setlist) ? i.setlist : []).join('\n');
+        document.getElementById('f_note').value = i.note || "";
+
+        document.getElementById('deleteBtn').style.display = 'block';
+        document.getElementById('cancelEditBtn').style.display = 'block';
+
+        document.querySelectorAll('.type-btn').forEach(b => {
+            if(b.innerText === i.type) b.classList.add('selected'); else b.classList.remove('selected');
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('formTitle').innerText = "ライブ登録";
+        document.getElementById('f_id').value = "";
+        document.getElementById('adminForm').querySelectorAll('input, textarea').forEach(el => el.value = "");
+        document.getElementById('deleteBtn').style.display = 'none';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    async function submitData() {
+        const btn = document.getElementById('submitBtn');
+        const payload = {
+            id: document.getElementById('f_id').value || null,
+            date: document.getElementById('f_date').value.replace('T', ' '),
+            title: document.getElementById('f_title').value,
+            venue: document.getElementById('f_venue').value,
+            setlist: document.getElementById('f_setlist').value.split('\n').filter(s => s.trim() !== ""),
+            note: document.getElementById('f_note').value,
+            type: document.getElementById('f_type').value,
+            tag: document.getElementById('f_tag').value
+        };
+        btn.disabled = true; btn.innerText = "送信中...";
+
+        try {
+            const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error("POST failed");
+            location.reload();
+        } catch (e) {
+            console.error(e);
+            alert("送信に失敗しました。通信状況を確認してください。");
+            btn.disabled = false; btn.innerText = "登録";
+        }
+    }
+
+    async function deleteData() {
+        const id = document.getElementById('f_id').value;
+        if(!id || !confirm("本当に削除しますか？")) return;
+
+        const btn = document.getElementById('deleteBtn');
+        btn.disabled = true; btn.innerText = "削除中...";
+
+        try {
+            const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: 'delete', id: id }) });
+            if (!res.ok) throw new Error("DELETE failed");
+            location.reload();
+        } catch (e) {
+            console.error(e);
+            alert("削除に失敗しました。通信状況を確認してください。");
+            btn.disabled = false; btn.innerText = "このライブを削除";
+        }
+    }
+
+    // --- その他基本機能 ---
+    function selectType(val, btn) {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected'); document.getElementById('f_type').value = val;
+    }
+
+    function toggleCardDetails(btn) {
+        const area = btn.closest('.live-card').querySelector('.setlist-area');
+        area.classList.toggle('active');
+        btn.innerText = area.classList.contains('active') ? "詳細を閉じる" : "詳細を表示";
+    }
+
+    function applySort(arr) {
+        const sort = document.getElementById('sortSelect')?.value || "new";
+        const copy = [...arr];
+
+        if (sort === "old") {
+            copy.sort((a, b) => parseDateToMs(a.date) - parseDateToMs(b.date));
+            return copy;
+        }
+
+        if (sort === "songs_desc") {
+            copy.sort((a, b) => {
+                const al = Array.isArray(a.setlist) ? a.setlist.length : 0;
+                const bl = Array.isArray(b.setlist) ? b.setlist.length : 0;
+                if (bl !== al) return bl - al;
+                return parseDateToMs(b.date) - parseDateToMs(a.date);
+            });
+            return copy;
+        }
+
+        if (sort === "venue_asc") {
+            copy.sort((a, b) => {
+                const av = (a.venue || "").toLowerCase();
+                const bv = (b.venue || "").toLowerCase();
+                if (av < bv) return -1;
+                if (av > bv) return 1;
+                return parseDateToMs(b.date) - parseDateToMs(a.date);
+            });
+            return copy;
+        }
+
+        // new
+        copy.sort((a, b) => parseDateToMs(b.date) - parseDateToMs(a.date));
+        return copy;
+    }
+
+    function handleFilter() {
+        const q = document.getElementById('searchInput').value.toLowerCase().trim();
+        const year = document.getElementById('yearFilter').value;
+        const favOnly = document.getElementById('favOnly')?.checked;
+
+        let filtered = allData.filter(i => {
+            const title = (i.title || "").toLowerCase();
+            const venue = (i.venue || "").toLowerCase();
+            const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
+
+            const matchTxt =
+                title.includes(q) ||
+                venue.includes(q) ||
+                setlistArr.some(s => (s || "").toLowerCase().includes(q));
+
+            const matchYear = !year || (i.date && i.date.startsWith(year));
+            const matchFav = !favOnly || isFav(i.id);
+
+            return matchTxt && matchYear && matchFav;
+        });
+
+        filtered = applySort(filtered);
+        renderList(filtered);
+    }
+
+    function updateYearOptions() {
+        const years = [...new Set(allData.map(i => i.date ? i.date.substring(0, 4) : null).filter(y => y))].sort((a,b)=>b-a);
+        const s = document.getElementById('yearFilter');
+        s.innerHTML = '<option value="">すべての年</option>';
+        years.forEach(y => {
+            const o = document.createElement('option');
+            o.value = y;
+            o.textContent = y + "年";
+            s.appendChild(o);
+        });
+    }
+
+    function smartParse() {
+        const text = document.getElementById('ai_paste').value; if (!text) return;
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+
         const titleMatch = text.match(/『(.+)』/);
         if(titleMatch) document.getElementById('f_title').value = titleMatch[1];
 
