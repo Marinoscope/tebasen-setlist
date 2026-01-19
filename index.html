@@ -9,7 +9,7 @@
     <style>
         :root { --main-orange: #f39800; --bg: #f4f4f4; --fav-pink: #ff4757; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); margin: 0; color: #333; -webkit-text-size-adjust: 100%; }
-        
+
         /* ヘッダー */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--main-orange); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         header { color: white; padding: 1rem; text-align: center; position: relative; }
@@ -89,14 +89,14 @@
         <div id="adminForm">
             <h3 id="formTitle" style="margin-top:0">ライブ登録</h3>
             <input type="hidden" id="f_id" value="">
-            
+
             <textarea id="ai_paste" class="admin-input" rows="2" placeholder="公式ポストを解析..." style="background:#fffef0; border:1px dashed var(--main-orange);"></textarea>
             <button onclick="smartParse()" style="width:100%; background:var(--main-orange); color:white; border:none; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold; cursor:pointer;">✨ 読み取る</button>
-            
+
             <input type="datetime-local" id="f_date" class="admin-input">
             <input type="text" id="f_title" placeholder="ライブ名" class="admin-input">
             <input type="text" id="f_venue" placeholder="会場名" class="admin-input">
-            
+
             <div id="typeSelector" style="margin-bottom:15px;">
                 <button type="button" class="type-btn" onclick="selectType('単独', this)">単独</button>
                 <button type="button" class="type-btn" onclick="selectType('対バン', this)">対バン</button>
@@ -108,16 +108,21 @@
             <input type="text" id="f_tag" placeholder="追加タグ (カンマ区切り)" class="admin-input">
             <textarea id="f_setlist" rows="8" placeholder="セトリ (1曲1行)" class="admin-input"></textarea>
             <input type="text" id="f_note" placeholder="備考" class="admin-input">
-            
+
             <button id="submitBtn" onclick="submitData()" style="width:100%; background:#333; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">登録</button>
             <button id="deleteBtn" onclick="deleteData()" style="width:100%; background:var(--fav-pink); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; margin-top:10px; display:none; cursor:pointer;">このライブを削除</button>
             <button id="cancelEditBtn" onclick="resetForm()" style="width:100%; background:none; color:#888; border:none; padding:10px; margin-top:5px; display:none; cursor:pointer;">キャンセル</button>
         </div>
 
         <div class="filter-area">
-            <div class="search-box"><input type="text" id="searchInput" placeholder="楽曲・会場で検索..." oninput="handleFilter()"></div>
-            <div class="filter-controls"><select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select></div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="楽曲・会場で検索..." oninput="handleFilter()">
+            </div>
+            <div class="filter-controls">
+                <select id="yearFilter" onchange="handleFilter()"><option value="">すべての年</option></select>
+            </div>
         </div>
+
         <div id="loading" style="text-align:center; padding:20px;">取得中...</div>
         <div id="liveList"></div>
     </div>
@@ -160,34 +165,45 @@
         try {
             const res = await fetch(GAS_API_URL);
             allData = await res.json();
-            allData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // date が壊れてても落ちないように
+            allData.sort((a, b) => {
+                const da = Date.parse((a.date || "").replace(' ', 'T').replace(/\//g, '-')) || 0;
+                const db = Date.parse((b.date || "").replace(' ', 'T').replace(/\//g, '-')) || 0;
+                return db - da;
+            });
+
             updateYearOptions();
             renderList(allData);
             document.getElementById('loading').style.display = 'none';
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     function renderList(data) {
         const list = document.getElementById('liveList');
         list.innerHTML = data.map(i => {
+            const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
             const d = i.date ? i.date.substring(0, 16).replace(/-/g, '/') : "不明";
             const tags = i.tag ? i.tag.split(',').map(t => `<span class="badge badge-tag">${t.trim()}</span>`).join('') : '';
             const typeB = i.type ? `<span class="badge badge-type">${i.type}</span>` : '';
             const noteHtml = i.note ? `<div class="note-text">${i.note}</div>` : '';
+
             return `
             <div class="live-card">
                 <div style="margin-bottom:5px;">${typeB}${tags}</div>
                 <div class="meta"><i class="fas fa-calendar-alt"></i> ${d}</div>
-                <div class="live-title">${i.title}</div>
-                <div class="meta"><i class="fas fa-map-marker-alt"></i> ${i.venue}</div>
+                <div class="live-title">${i.title || ""}</div>
+                <div class="meta"><i class="fas fa-map-marker-alt"></i> ${i.venue || ""}</div>
                 ${noteHtml}
                 <div class="card-footer">
                     <button class="edit-btn" onclick="startEdit('${i.id}')" style="${isAdmin?'display:block':''}">編集</button>
                     <button class="toggle-details-btn" onclick="toggleCardDetails(this)">詳細を表示</button>
                 </div>
                 <div class="setlist-area">
-                    ${i.setlist.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f9f9f9;">${idx+1}. ${song}</div>`).join('')}
-                    <button class="btn-share-main" onclick="shareSetlistCombined(this, '${d}', '${i.title}', '${i.venue}', '${i.setlist.join(',')}')">
+                    ${setlistArr.map((song, idx) => `<div style="padding:8px 0; border-bottom:1px solid #f9f9f9;">${idx+1}. ${song}</div>`).join('')}
+                    <button class="btn-share-main js-share" data-id="${i.id}">
                         <i class="fas fa-share-square"></i> セトリを共有
                     </button>
                 </div>
@@ -195,45 +211,93 @@
         }).join('');
     }
 
-    // --- 共有機能 ---
-    async function shareSetlistCombined(btn, date, title, venue, setlistStr) {
+    // クリックを一括で拾う（イベントデリゲーション：共有のみ）
+    document.addEventListener('click', (e) => {
+        const shareBtn = e.target.closest('.js-share');
+        if (shareBtn) {
+            const id = shareBtn.dataset.id;
+            const live = allData.find(x => String(x.id) === String(id));
+            if (!live) return;
+            shareSetlistFromLive(shareBtn, live);
+        }
+    });
+
+    // --- 共有機能（安全版：liveオブジェクトを受け取る） ---
+    async function shareSetlistFromLive(btn, live) {
         const originalText = btn.innerHTML;
-        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 作成中...';
-        const setlist = setlistStr.split(',');
-        const cleanDate = date.split(' ')[0];
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 作成中...';
+
+        const dateText = live.date ? live.date.substring(0, 16).replace(/-/g, '/') : "不明";
+        const cleanDate = dateText.split(' ')[0];
+
+        const setlist = Array.isArray(live.setlist) ? live.setlist : [];
+
         document.getElementById('c-date').innerText = cleanDate;
-        document.getElementById('c-title').innerText = title;
-        document.getElementById('c-venue').innerText = "@ " + venue;
-        document.getElementById('c-list').innerHTML = setlist.map((s, idx) => `<div>${idx+1}. ${s}</div>`).join('');
-        
+        document.getElementById('c-title').innerText = live.title || "";
+        document.getElementById('c-venue').innerText = "@ " + (live.venue || "");
+
+        const cList = document.getElementById('c-list');
+        cList.innerHTML = "";
+        setlist.forEach((s, idx) => {
+            const div = document.createElement('div');
+            div.textContent = `${idx + 1}. ${s}`;
+            cList.appendChild(div);
+        });
+
         try {
-            const canvas = await html2canvas(document.getElementById('capture-target'), { scale: 1.5, useCORS: true });
+            const canvas = await html2canvas(
+                document.getElementById('capture-target'),
+                { scale: 1.5, useCORS: true }
+            );
+
             canvas.toBlob(async (blob) => {
-                const file = new File([blob], `setlist_${cleanDate}.png`, { type: 'image/png' });
-                const shareText = `${cleanDate}\n${title}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
-                if (navigator.share) {
-                    await navigator.share({ files: [file], text: shareText }).catch(()=>{});
-                } else {
-                    const link = document.createElement('a'); link.download = `setlist_${cleanDate}.png`; link.href = URL.createObjectURL(blob); link.click();
+                try {
+                    if (!blob) throw new Error("blob is null");
+
+                    const file = new File([blob], `setlist_${cleanDate}.png`, { type: 'image/png' });
+                    const shareText = `${cleanDate}\n${live.title || ""}\n#手羽先センセーション #手羽センセトリログ\n${SHARE_URL}`;
+
+                    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                        await navigator.share({ files: [file], text: shareText });
+                    } else if (navigator.share) {
+                        await navigator.share({ text: shareText }).catch(() => {});
+                        const link = document.createElement('a');
+                        link.download = `setlist_${cleanDate}.png`;
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = `setlist_${cleanDate}.png`;
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                    }
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                 }
-                btn.disabled = false; btn.innerHTML = originalText;
             });
         } catch (e) {
+            console.error(e);
             alert("画像生成に失敗しました。");
-            btn.disabled = false; btn.innerHTML = originalText;
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     }
 
-    // --- ランキング ---
+    // --- ランキング（setlistが欠けても落ちない版） ---
     function generateRanking() {
         const sm = {}; const vm = {}; const l10sm = {};
+
         allData.forEach((i, idx) => {
-            i.setlist.forEach(s => {
-                const t = s.trim(); if(!t || t==="SE" || t==="MC") return;
-                sm[t] = (sm[t]||0)+1;
-                if(idx < 10) l10sm[t] = (l10sm[t]||0)+1;
+            const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
+            setlistArr.forEach(s => {
+                const t = (s || "").trim();
+                if (!t || t === "SE" || t === "MC") return;
+                sm[t] = (sm[t] || 0) + 1;
+                if (idx < 10) l10sm[t] = (l10sm[t] || 0) + 1;
             });
-            if(i.venue) vm[i.venue] = (vm[i.venue]||0)+1;
+            if (i.venue) vm[i.venue] = (vm[i.venue] || 0) + 1;
         });
 
         const sortedS = Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0, 15);
@@ -245,7 +309,7 @@
                         <span style="font-weight:bold;">${e[0]}</span>
                         <span class="prob-badge">直近10公演の期待値 ${(l10sm[e[0]]||0)*10}%</span>
                     </div>
-                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/sortedS[0][1])*100}%"></div></div>
+                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${sortedS[0] ? (e[1]/sortedS[0][1])*100 : 0}%"></div></div>
                     <div style="font-size:0.7rem; color:#888;">累計演奏回数: ${e[1]}回</div>
                 </div>
             </div>`).join('');
@@ -256,7 +320,7 @@
                 <div style="font-weight:bold; width:25px;">${idx+1}</div>
                 <div style="flex:1">
                     <div style="font-weight:bold;">${e[0]}</div>
-                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e[1]/sortedV[0][1])*100}%; background:#999;"></div></div>
+                    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${sortedV[0] ? (e[1]/sortedV[0][1])*100 : 0}%; background:#999;"></div></div>
                     <div style="font-size:0.7rem; color:#888;">公演数: ${e[1]}公演</div>
                 </div>
             </div>`).join('');
@@ -278,7 +342,7 @@
     function startEdit(id) {
         const i = allData.find(x => x.id == id);
         if(!i) return;
-        
+
         let formattedDate = "";
         if(i.date) formattedDate = i.date.replace(/\//g, '-').replace(' ', 'T');
 
@@ -287,13 +351,13 @@
         document.getElementById('formTitle').innerText = "ライブ修正";
         document.getElementById('f_id').value = i.id;
         document.getElementById('f_date').value = formattedDate;
-        document.getElementById('f_title').value = i.title;
-        document.getElementById('f_venue').value = i.venue;
-        document.getElementById('f_type').value = i.type;
+        document.getElementById('f_title').value = i.title || "";
+        document.getElementById('f_venue').value = i.venue || "";
+        document.getElementById('f_type').value = i.type || "";
         document.getElementById('f_tag').value = i.tag || "";
-        document.getElementById('f_setlist').value = i.setlist.join('\n');
+        document.getElementById('f_setlist').value = (Array.isArray(i.setlist) ? i.setlist : []).join('\n');
         document.getElementById('f_note').value = i.note || "";
-        
+
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('cancelEditBtn').style.display = 'block';
 
@@ -324,17 +388,34 @@
             tag: document.getElementById('f_tag').value
         };
         btn.disabled = true; btn.innerText = "送信中...";
-        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-        location.reload();
+
+        try {
+            const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error("POST failed");
+            location.reload();
+        } catch (e) {
+            console.error(e);
+            alert("送信に失敗しました。通信状況を確認してください。");
+            btn.disabled = false; btn.innerText = "登録";
+        }
     }
 
     async function deleteData() {
         const id = document.getElementById('f_id').value;
         if(!id || !confirm("本当に削除しますか？")) return;
+
         const btn = document.getElementById('deleteBtn');
         btn.disabled = true; btn.innerText = "削除中...";
-        await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: 'delete', id: id }) });
-        location.reload();
+
+        try {
+            const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: 'delete', id: id }) });
+            if (!res.ok) throw new Error("DELETE failed");
+            location.reload();
+        } catch (e) {
+            console.error(e);
+            alert("削除に失敗しました。通信状況を確認してください。");
+            btn.disabled = false; btn.innerText = "このライブを削除";
+        }
     }
 
     // --- その他基本機能 ---
@@ -352,11 +433,21 @@
     function handleFilter() {
         const q = document.getElementById('searchInput').value.toLowerCase().trim();
         const year = document.getElementById('yearFilter').value;
+
         const filtered = allData.filter(i => {
-            const matchTxt = i.title.toLowerCase().includes(q) || i.venue.toLowerCase().includes(q) || i.setlist.some(s=>s.toLowerCase().includes(q));
+            const title = (i.title || "").toLowerCase();
+            const venue = (i.venue || "").toLowerCase();
+            const setlistArr = Array.isArray(i.setlist) ? i.setlist : [];
+
+            const matchTxt =
+                title.includes(q) ||
+                venue.includes(q) ||
+                setlistArr.some(s => (s || "").toLowerCase().includes(q));
+
             const matchYear = !year || (i.date && i.date.startsWith(year));
             return matchTxt && matchYear;
         });
+
         renderList(filtered);
     }
 
@@ -372,15 +463,21 @@
         const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
         const titleMatch = text.match(/『(.+)』/);
         if(titleMatch) document.getElementById('f_title').value = titleMatch[1];
+
         const dateMatch = text.match(/(\d{1,2})\/(\d{1,2})/);
         if (dateMatch) {
             const now = new Date();
             document.getElementById('f_date').value = `${now.getFullYear()}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}T19:00`;
         }
+
         const venueMatch = text.match(/@([\w\p{L}]+)/u);
         if (venueMatch) document.getElementById('f_venue').value = venueMatch[1];
-        const setlistLines = lines.filter(l => l.match(/^[①-⑩\d]|SE|MC/));
-        document.getElementById('f_setlist').value = setlistLines.map(l => l.replace(/^[①-⑩\d]\s?/, '').trim()).join('\n');
+
+        // 行頭の番号/SE/MC を意図するなら ^ を全体に効かせる
+        const setlistLines = lines.filter(l => l.match(/^(?:[①-⑩\d]|SE|MC)/));
+        document.getElementById('f_setlist').value = setlistLines
+            .map(l => l.replace(/^(?:[①-⑩]|\d{1,2}[.)]?)\s?/, '').trim())
+            .join('\n');
     }
 
     function switchTab(p, b) {
